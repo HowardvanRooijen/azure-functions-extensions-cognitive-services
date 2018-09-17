@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Config
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Config
 {
     public static class VisionConfiguration
     {

@@ -1,8 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
 {
@@ -31,10 +29,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
 
         public VisionAnalysisRequest(string imageUrl) : base(imageUrl) { }
 
-
         [JsonProperty("options")]
         public VisionAnalysisOptions Options { get; set; } = VisionAnalysisOptions.All;
-
-
     }
 }

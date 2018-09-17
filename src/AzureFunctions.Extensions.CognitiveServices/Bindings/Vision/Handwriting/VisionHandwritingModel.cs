@@ -1,11 +1,8 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting
 {
-
     public class Word
     {
 
@@ -31,14 +28,12 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
 
     public class RecognitionResult
     {
-
         [JsonProperty("lines")]
         public IList<Line> Lines { get; set; }
     }
 
     public class VisionHandwritingModel
     {
-
         [JsonProperty("status")]
         public string Status { get; set; }
 

@@ -1,16 +1,12 @@
 ﻿using AzureFunctions.Extensions.CognitiveServices.Config;
 using Microsoft.Azure.WebJobs.Description;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 {
     public class VisionThumbnailRequest : VisionRequestBase
     {
-
         public VisionThumbnailRequest() { }
 
         public VisionThumbnailRequest(Stream image) : base(image) { }
@@ -18,7 +14,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
         public VisionThumbnailRequest(byte[] image) : base(image) { }
 
         public VisionThumbnailRequest(string imageUrl) : base(imageUrl) { }
-
 
         [AutoResolve()]
         [Required(ErrorMessage = VisionExceptionMessages.WidthMissing)]

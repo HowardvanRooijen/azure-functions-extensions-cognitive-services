@@ -1,14 +1,8 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using Microsoft.Azure.WebJobs.Description;
+﻿using Microsoft.Azure.WebJobs.Description;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings
 {
-
     /// <summary>
     /// Determines the source of the image being analyzed. Each Image Source
     /// has varied required properties.
@@ -16,7 +10,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings
     public enum ImageSource
     {
         /// <summary>
-        /// Image source is a publically accessible url
+        /// Image source is a publicly accessible url
         /// </summary>
         Url,
         /// <summary>
@@ -31,7 +25,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings
 
     public abstract class VisionAttributeBase : Attribute
     {
-
         /// <summary>
         /// Vision Service URL. Defaults to an appSettings of VisionUrl
         /// </summary>
@@ -79,7 +72,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings
         [AutoResolve()]
         public string ImageUrl { get; set; }
 
-
         internal void Validate()
         {
 
@@ -121,9 +113,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings
 
                     break;
             }
-
         }
-
     }
 }
-

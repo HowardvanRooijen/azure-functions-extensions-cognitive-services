@@ -1,8 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 {
@@ -26,10 +23,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 
         public VisionDomainRequest(string imageUrl) : base(imageUrl) { }
 
-
         [JsonProperty("options")]
         public VisionDomainOptions Domain { get; set; } = VisionDomainOptions.None;
-
-
     }
 }

@@ -3,78 +3,62 @@ using AzureFunctions.Extensions.CognitiveServices.Services;
 using Microsoft.Azure.WebJobs.Host.Config;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 {
     public class VisionDomainBinding : IExtensionConfigProvider, IVisionBinding
     {
+        private readonly ILoggerFactory loggerFactory;
+
+        public VisionDomainBinding(ILoggerFactory loggerFactory)
+        {
+            this.loggerFactory = loggerFactory;
+        }
 
         public ICognitiveServicesClient Client { get; set; }
 
-        internal ILoggerFactory _loggerFactory;
-        internal ILogger _log;
-
-
         public void Initialize(ExtensionConfigContext context)
         {
-
             LoadClient();
-
-            _loggerFactory = context.Config.LoggerFactory ?? throw new ArgumentNullException("Logger Missing");
 
             var visionDomainRule = context.AddBindingRule<VisionDomainAttribute>();
 
-            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.BlobStorage)
-                .BindToInput<VisionDomainLandmarkModel>(GetVisionLandmarkModel);
-
-            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.Url)
-                .BindToInput<VisionDomainLandmarkModel>(GetVisionLandmarkModel);
-
-            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.BlobStorage)
-                .BindToInput<VisionDomainCelebrityModel>(GetVisionCelebrityModel);
-
-            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.Url)
-             .BindToInput<VisionDomainCelebrityModel>(GetVisionCelebrityModel);
-
-            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.Client)
-                .BindToInput<VisionDomainClient>(attr => new VisionDomainClient(this, attr, _loggerFactory));
-
-
+            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.BlobStorage).BindToInput<VisionDomainLandmarkModel>(GetVisionLandmarkModel);
+            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.Url).BindToInput<VisionDomainLandmarkModel>(GetVisionLandmarkModel);
+            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.BlobStorage).BindToInput<VisionDomainCelebrityModel>(GetVisionCelebrityModel);
+            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.Url).BindToInput<VisionDomainCelebrityModel>(GetVisionCelebrityModel);
+            visionDomainRule.When(nameof(VisionDomainAttribute.ImageSource), ImageSource.Client).BindToInput<VisionDomainClient>(attr => new VisionDomainClient(this, attr, this.loggerFactory));
         }
 
         private void LoadClient()
         {
-            if (Client == null)
+            if (this.Client is null)
             {
-                Client = new CognitiveServicesClient(new RetryPolicy(), _loggerFactory);
+                this.Client = new CognitiveServicesClient(new RetryPolicy(), this.loggerFactory);
             }
         }
 
-        private VisionDomainCelebrityModel GetVisionCelebrityModel(VisionDomainAttribute attribute)
+        private VisionDomainCelebrityModel GetVisionCelebrityModel(VisionDomainAttribute visionDomainAttribute)
         {
 
-            if (attribute.ImageSource == Bindings.ImageSource.Client)
+            if (visionDomainAttribute.ImageSource == Bindings.ImageSource.Client)
             {
                 throw new ArgumentException($"ImageSource of Client does not support binding to vision models. Use Url or BlobStorage instead. ");
             }
 
-            attribute.Validate();
+            visionDomainAttribute.Validate();
 
-            var client = new VisionDomainClient(this, attribute, _loggerFactory);
-            var request = BuildRequest(attribute);
-           
-            var result = client.AnalyzeCelebrityAsync(request);
-            result.Wait();
+            var client = new VisionDomainClient(this, visionDomainAttribute, this.loggerFactory);
+            var request = BuildRequest(visionDomainAttribute);
+            var task = client.AnalyzeCelebrityAsync(request);
 
-            return result.Result;
+            task.Wait();
 
+            return task.Result;
         }
 
         private VisionDomainLandmarkModel GetVisionLandmarkModel(VisionDomainAttribute attribute)
         {
-
             if (attribute.ImageSource == Bindings.ImageSource.Client)
             {
                 throw new ArgumentException($"ImageSource of Client does not support binding to vision models. Use Url or BlobStorage instead. ");
@@ -82,19 +66,18 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 
             attribute.Validate();
 
-            var client = new VisionDomainClient(this, attribute, _loggerFactory);
+            var client = new VisionDomainClient(this, attribute, this.loggerFactory);
             var request = BuildRequest(attribute);
-
             var result = client.AnalyzeLandmarkAsync(request);
+
             result.Wait();
 
             return result.Result;
-
         }
 
         private VisionDomainRequest BuildRequest(VisionDomainAttribute attribute)
         {
-            VisionDomainRequest request = new VisionDomainRequest();
+            var request = new VisionDomainRequest();
 
             if (attribute.ImageSource == ImageSource.BlobStorage)
             {
@@ -109,7 +92,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
             }
 
             return request;
-
         }
     }
 }

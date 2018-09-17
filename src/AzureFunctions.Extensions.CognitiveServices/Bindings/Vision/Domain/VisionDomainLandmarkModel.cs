@@ -1,13 +1,10 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 {
     public class Landmark
     {
-
         [JsonProperty("name")]
         public string Name { get; set; }
 
@@ -17,14 +14,12 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 
     public class Result
     {
-
         [JsonProperty("landmarks")]
         public IList<Landmark> Landmarks { get; set; }
     }
 
     public class LandmarkMetadata
     {
-
         [JsonProperty("height")]
         public int Height { get; set; }
 
@@ -37,7 +32,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 
     public class VisionDomainLandmarkModel
     {
-
         [JsonProperty("result")]
         public Result Result { get; set; }
 
@@ -52,8 +46,4 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
             return JsonConvert.SerializeObject(this);
         }
     }
-
-
-
-
 }

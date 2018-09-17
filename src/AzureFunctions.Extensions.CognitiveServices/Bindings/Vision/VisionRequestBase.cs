@@ -1,9 +1,7 @@
 ﻿using AzureFunctions.Extensions.CognitiveServices.Config;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision
 {
@@ -77,7 +75,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision
             {
                 if (ImageBytes == null || ImageBytes.Length == 0)
                 {
-
                     bool validUrl = Uri.TryCreate(ImageUrl, UriKind.Absolute, out Uri uriResult)
                         && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
 
@@ -85,12 +82,10 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision
                     {
                         return true;
                     }
-
                 }
 
                 return false;
             }
         }
-
     }
 }

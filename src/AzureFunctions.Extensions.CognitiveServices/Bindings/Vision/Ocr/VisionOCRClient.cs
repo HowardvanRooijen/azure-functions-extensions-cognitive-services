@@ -1,14 +1,11 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail;
-using AzureFunctions.Extensions.CognitiveServices.Config;
+﻿using AzureFunctions.Extensions.CognitiveServices.Config;
 using AzureFunctions.Extensions.CognitiveServices.Services;
 using AzureFunctions.Extensions.CognitiveServices.Services.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
@@ -76,7 +73,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
                         _log.LogWarning(message);
                         throw new ArgumentException(message);
                     }
-
                 }
             }
 
@@ -146,12 +142,10 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 
                 throw new Exception(message);
             }
-
         }
 
         private async Task<VisionOcrRequest> MergeProperties(VisionOcrRequest operation, IVisionBinding config, VisionOcrAttribute attr)
         {
-
             var visionOperation = new VisionOcrRequest
             {
                 Url = attr.VisionUrl ?? operation.Url,
@@ -162,7 +156,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
                 ImageBytes = operation.ImageBytes,
                 DetectOrientation = attr.DetectOrientation.HasValue ? attr.DetectOrientation.Value : operation.DetectOrientation
             };
-
 
             if (string.IsNullOrEmpty(visionOperation.Key) && string.IsNullOrEmpty(visionOperation.SecureKey))
             {
@@ -178,7 +171,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
             }
 
             return visionOperation;
-
         }
     }
 }

@@ -2,9 +2,7 @@
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Services.AppAuthentication;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Services
@@ -27,9 +25,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
                 var msg = string.Format(string.Format(VisionExceptionMessages.KeyvaultException, ex.ToString()));
                 throw new Exception(msg,ex);
             }
-       
         }
-
-
     }
 }

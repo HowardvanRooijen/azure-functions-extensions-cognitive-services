@@ -5,11 +5,9 @@ using Polly;
 using Polly.Timeout;
 using Polly.Wrap;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Services
@@ -19,7 +17,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
         private static HttpClient _client = new HttpClient();
         private PolicyWrap<HttpResponseMessage> _retryPolicyWrapper;
         private ILogger _log;
-
 
         public HttpClient GetHttpClientInstance()
         {
@@ -42,12 +39,9 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
                                    onRetry: (exception, retryCount, context) =>
                                    {
                                        _log.LogWarning($"Cognitive Service - Retry {retryCount} of {context.PolicyKey}, due to 429 throttling.");
-                                   }
-                );
-
+                                   });
 
             _retryPolicyWrapper = timeoutPolicy.WrapAsync(throttleRetryPolicy);
-
         }
 
         public async Task<ServiceResultModel> PostAsync(string uri, string key, StringContent content, ReturnType returnType)
@@ -62,7 +56,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
                 var response = await _client.PostAsync(uri, content);
 
                 return response;
-
             });
 
             var result = new ServiceResultModel { HttpStatusCode = (int)httpResponse.StatusCode };
@@ -79,16 +72,12 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
                 result.Headers = httpResponse.Headers;
             }
 
-
             return result;
-
-
         }
 
         public async Task<ServiceResultModel> PostAsync(string uri, string key, ByteArrayContent content, ReturnType returnType)
         {
             var httpResponse = await _retryPolicyWrapper.ExecuteAsync(async () => {
-
                 _client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
 
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
@@ -97,7 +86,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
                 var response = await _client.PostAsync(uri, content);
 
                 return response;
-
             });
 
             var result = new ServiceResultModel { HttpStatusCode = (int)httpResponse.StatusCode };
@@ -113,7 +101,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
                 result.Binary = await httpResponse.Content.ReadAsByteArrayAsync();
                 result.Headers = httpResponse.Headers;
             }
-
 
             return result;
         }
@@ -127,7 +114,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
                 var response = await _client.GetAsync(uri);
 
                 return response;
-
             });
 
             var result = new ServiceResultModel { HttpStatusCode = (int)httpResponse.StatusCode };

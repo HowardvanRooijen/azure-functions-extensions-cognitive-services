@@ -1,13 +1,10 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 {
     public class FaceRectangle
     {
-
         [JsonProperty("top")]
         public int Top { get; set; }
 
@@ -23,7 +20,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 
     public class Celebrity
     {
-
         [JsonProperty("faceRectangle")]
         public FaceRectangle FaceRectangle { get; set; }
 
@@ -36,14 +32,12 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 
     public class CelebrityResult
     {
-
         [JsonProperty("celebrities")]
         public IList<Celebrity> Celebrities { get; set; }
     }
 
     public class CelebrityMetadata
     {
-
         [JsonProperty("height")]
         public int Height { get; set; }
 
@@ -56,7 +50,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 
     public class VisionDomainCelebrityModel
     {
-
         [JsonProperty("result")]
         public CelebrityResult Result { get; set; }
 
@@ -72,7 +65,3 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
         }
     }
 }
-
-
-
-

@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
 {
@@ -32,7 +30,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
         {
             return JsonConvert.SerializeObject(this);
         }
-
     }
 
     public class VisionCategory
@@ -93,7 +90,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
 
         [JsonProperty(PropertyName = "captions")]
         public IEnumerable<VisionCaption> Captions { get; set; }
-
     }
 
     public class VisionCaption

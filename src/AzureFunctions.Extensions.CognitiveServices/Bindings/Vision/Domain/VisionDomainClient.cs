@@ -1,14 +1,11 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis;
-using AzureFunctions.Extensions.CognitiveServices.Config;
+﻿using AzureFunctions.Extensions.CognitiveServices.Config;
 using AzureFunctions.Extensions.CognitiveServices.Services;
 using AzureFunctions.Extensions.CognitiveServices.Services.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
@@ -160,12 +157,10 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 
                 throw new Exception(message);
             }
-
         }
 
         private string GetVisionOperationParameters(VisionDomainRequest request)
         {
-
             string optionsParam = string.Empty;
 
             switch (request.Domain)
@@ -212,7 +207,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
                 }
             }
 
-
             var visionOperation = new VisionDomainRequest
             {
                 Url = attr.VisionUrl ?? operation.Url,
@@ -238,10 +232,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
             }
 
             return visionOperation;
-
         }
-
     }
-
-
 }

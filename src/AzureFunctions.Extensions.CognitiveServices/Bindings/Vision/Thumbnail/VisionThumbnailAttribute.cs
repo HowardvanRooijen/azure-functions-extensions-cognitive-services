@@ -1,9 +1,5 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using Microsoft.Azure.WebJobs.Description;
+﻿using Microsoft.Azure.WebJobs.Description;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 {
@@ -20,4 +16,3 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
         public bool SmartCropping { get; set; }
     }
 }
-

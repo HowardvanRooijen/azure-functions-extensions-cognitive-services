@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
@@ -74,7 +73,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
                         _log.LogWarning(message);
                         throw new ArgumentException(message);
                     }
-
                 }
             }
 
@@ -109,7 +107,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
                 sw.Stop();
 
                 _log.LogMetric("VisionRequestDurationMillisecond", sw.ElapsedMilliseconds);
-
             }
             else
             {
@@ -145,7 +142,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
 
                 throw new Exception(message);
             }
-
         }
 
         private string GetVisionOperationParameters(VisionAnalysisRequest request)
@@ -169,12 +165,10 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
                                   VisionAnalysisOptions.Tags;
             }
 
-
             //Details Parameters
             if (options.HasFlag(VisionAnalysisOptions.Celebrities)
                 || options.HasFlag(VisionAnalysisOptions.Landmarks))
             {
-
                 List<string> details = new List<string>();
 
                 if (options.HasFlag(VisionAnalysisOptions.Celebrities))
@@ -208,8 +202,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
 
         private async Task<VisionAnalysisRequest> MergeProperties(VisionAnalysisRequest operation, IVisionBinding config, VisionAnalysisAttribute attr)
         {
-
-
             var visionOperation = new VisionAnalysisRequest
             {
                 Url = attr.VisionUrl ?? operation.Url,
@@ -235,9 +227,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
             }
 
             return visionOperation;
-
         }
-
     }
-
 }

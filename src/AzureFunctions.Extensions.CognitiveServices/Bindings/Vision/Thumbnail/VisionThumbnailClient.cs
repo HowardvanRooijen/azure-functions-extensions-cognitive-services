@@ -4,10 +4,8 @@ using AzureFunctions.Extensions.CognitiveServices.Services.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
@@ -27,7 +25,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 
         public async Task<Byte[]> ThumbnailAsync(VisionThumbnailRequest request)
         {
-            Stopwatch imageResizeSW = null;
+            Stopwatch imageResizeSw = null;
 
             var visionOperation = await MergeProperties(request, this._config, this._attr);
 
@@ -46,7 +44,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
                     throw new ArgumentException(VisionExceptionMessages.InvalidFileType);
                 }
 
-
                 if (visionOperation.Oversized == true && visionOperation.AutoResize == false)
                 {
                     var message = string.Format(VisionExceptionMessages.FileTooLarge,
@@ -58,15 +55,15 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
                 {
                     _log.LogTrace("Resizing Image");
 
-                    imageResizeSW = new Stopwatch();
+                    imageResizeSw = new Stopwatch();
 
-                    imageResizeSW.Start();
+                    imageResizeSw.Start();
 
                     visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                    imageResizeSW.Stop();
+                    imageResizeSw.Stop();
 
-                    _log.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSW.ElapsedMilliseconds);
+                    _log.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSw.ElapsedMilliseconds);
 
                     if (visionOperation.Oversized)
                     {
@@ -75,7 +72,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
                         _log.LogWarning(message);
                         throw new ArgumentException(message);
                     }
-
                 }
             }
 
@@ -108,7 +104,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
                 sw.Stop();
 
                 _log.LogMetric("VisionRequestDurationMillisecond", sw.ElapsedMilliseconds);
-
             }
             else
             {
@@ -144,12 +139,10 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 
                 throw new Exception(message);
             }
-
         }
 
         private async Task<VisionThumbnailRequest> MergeProperties(VisionThumbnailRequest operation, IVisionBinding config, VisionThumbnailAttribute attr)
         {
-
             var visionOperation = new VisionThumbnailRequest
             {
                 Url = attr.VisionUrl ?? operation.Url,
@@ -162,7 +155,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
                 ImageUrl = string.IsNullOrEmpty(operation.ImageUrl) ? attr.ImageUrl : operation.ImageUrl,
                 ImageBytes = operation.ImageBytes,
             };
-
 
             if (string.IsNullOrEmpty(visionOperation.Key) && string.IsNullOrEmpty(visionOperation.SecureKey))
             {
@@ -178,8 +170,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
             }
 
             return visionOperation;
-
         }
-
     }
 }

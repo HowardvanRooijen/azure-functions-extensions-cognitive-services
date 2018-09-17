@@ -4,10 +4,8 @@ using AzureFunctions.Extensions.CognitiveServices.Services.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
@@ -76,7 +74,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
                             _log.LogWarning(message);
                             throw new ArgumentException(message);
                         }
-
                     }
                 }
 
@@ -114,7 +111,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
                 sw.Stop();
 
                 _log.LogMetric("VisionRequestDurationMillisecond", sw.ElapsedMilliseconds);
-
             }
             else
             {
@@ -150,7 +146,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 
                 throw new Exception(message);
             }
-
         }
 
         private async Task<VisionDescribeRequest> MergeProperties(VisionDescribeRequest operation, IVisionBinding config, VisionDescribeAttribute attr)
@@ -167,7 +162,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
                 ImageBytes = operation.ImageBytes,
             };
 
-
             if (string.IsNullOrEmpty(visionOperation.Key) && string.IsNullOrEmpty(visionOperation.SecureKey))
             {
                 _log.LogWarning(VisionExceptionMessages.KeyMissing);
@@ -182,8 +176,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
             }
 
             return visionOperation;
-
         }
-
     }
 }

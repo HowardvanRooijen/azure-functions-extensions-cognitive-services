@@ -6,11 +6,9 @@ using Newtonsoft.Json;
 using Polly;
 using Polly.Timeout;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting
@@ -135,13 +133,14 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
 
                 return result;
             }
-            else if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
+
+            if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
             {
 
                 VisionErrorModel error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, error.Code, error.Message);
 
-                _log.LogWarning(message);
+                this._log.LogWarning(message);
 
                 throw new Exception(message);
             }
@@ -149,11 +148,10 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
             {
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, requestResult.HttpStatusCode, requestResult.Contents);
 
-                _log.LogError(message);
+                this._log.LogError(message);
 
                 throw new Exception(message);
             }
-
         }
 
         private async Task<VisionHandwritingModel> CheckForResult(string operationUrl, VisionHandwritingRequest request)
@@ -211,13 +209,10 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
             });
 
             return visionHandwritingModel;
-
-
         }
 
         private async Task<VisionHandwritingRequest> MergeProperties(VisionHandwritingRequest operation, IVisionBinding config, VisionHandwritingAttribute attr)
         {
-
             var visionOperation = new VisionHandwritingRequest
             {
                 Url = attr.VisionUrl ?? operation.Url,
@@ -228,7 +223,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
                 ImageBytes = operation.ImageBytes,
                 Handwriting = attr.Handwriting.HasValue ? attr.Handwriting.Value : operation.Handwriting
             };
-
 
             if (string.IsNullOrEmpty(visionOperation.Key) && string.IsNullOrEmpty(visionOperation.SecureKey))
             {
@@ -244,7 +238,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
             }
 
             return visionOperation;
-
         }
     }
 }

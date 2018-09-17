@@ -1,13 +1,10 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 {
     public class VisionDescribeModel
     {
-
         [JsonProperty(PropertyName = "description")]
         public VisionDescribeDescription Description { get; set; }
 
@@ -18,7 +15,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
         {
             return JsonConvert.SerializeObject(this);
         }
-
     }
 
     public class VisionDescribeDescription

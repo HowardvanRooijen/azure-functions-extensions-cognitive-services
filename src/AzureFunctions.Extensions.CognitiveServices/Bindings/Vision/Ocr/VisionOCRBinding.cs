@@ -3,51 +3,41 @@ using AzureFunctions.Extensions.CognitiveServices.Services;
 using Microsoft.Azure.WebJobs.Host.Config;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 {
     public class VisionOcrBinding : IExtensionConfigProvider, IVisionBinding
     {
+        private readonly ILoggerFactory loggerFactory;
+
+        public VisionOcrBinding(ILoggerFactory loggerFactory)
+        {
+            this.loggerFactory = loggerFactory;
+        }
 
         public ICognitiveServicesClient Client { get; set; }
 
-        internal ILoggerFactory _loggerFactory;
-        internal ILogger _log;
-
-
         public void Initialize(ExtensionConfigContext context)
         {
-
-            LoadClient();
-
-            _loggerFactory = context.Config.LoggerFactory ?? throw new ArgumentNullException("Logger Missing");
+            this.LoadClient();
 
             var visionRule = context.AddBindingRule<VisionOcrAttribute>();
 
-            visionRule.When(nameof(VisionOcrAttribute.ImageSource), ImageSource.BlobStorage)
-                .BindToInput<VisionOcrModel>(GetVisionOcrModel);
-
-            visionRule.When(nameof(VisionOcrAttribute.ImageSource), ImageSource.Url)
-             .BindToInput<VisionOcrModel>(GetVisionOcrModel);
-
-            visionRule.When(nameof(VisionOcrAttribute.ImageSource), ImageSource.Client)
-                .BindToInput<VisionOcrClient>(attr => new VisionOcrClient(this, attr, _loggerFactory));
-
+            visionRule.When(nameof(VisionOcrAttribute.ImageSource), ImageSource.BlobStorage).BindToInput<VisionOcrModel>(GetVisionOcrModel);
+            visionRule.When(nameof(VisionOcrAttribute.ImageSource), ImageSource.Url).BindToInput<VisionOcrModel>(GetVisionOcrModel);
+            visionRule.When(nameof(VisionOcrAttribute.ImageSource), ImageSource.Client).BindToInput<VisionOcrClient>(attr => new VisionOcrClient(this, attr, this.loggerFactory));
         }
 
         private void LoadClient()
         {
-            if (Client == null)
+            if (this.Client is null)
             {
-                Client = new CognitiveServicesClient(new RetryPolicy(), _loggerFactory);
+                this.Client = new CognitiveServicesClient(new RetryPolicy(), this.loggerFactory);
             }
         }
 
         private VisionOcrModel GetVisionOcrModel(VisionOcrAttribute attribute)
         {
-
             if (attribute.ImageSource == Bindings.ImageSource.Client)
             {
                 throw new ArgumentException($"ImageSource of Client does not support binding to vision models. Use Url or BlobStorage instead. ");
@@ -55,9 +45,8 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 
             attribute.Validate();
 
-            var client = new VisionOcrClient(this, attribute, _loggerFactory);
-
-            VisionOcrRequest request = new VisionOcrRequest();
+            var client = new VisionOcrClient(this, attribute, this.loggerFactory);
+            var request = new VisionOcrRequest();
 
             if (attribute.ImageSource == ImageSource.BlobStorage)
             {
@@ -65,21 +54,16 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
                 fileTask.Wait();
 
                 request.ImageBytes = fileTask.Result;
-
             }
             else
             {
                 request.ImageUrl = attribute.ImageUrl;
             }
 
-            var result = client.OCRAsync(request);
-            result.Wait();
+            var task = client.OCRAsync(request);
+            task.Wait();
 
-            return result.Result;
-
+            return task.Result;
         }
-
-
-
     }
 }

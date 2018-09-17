@@ -1,8 +1,5 @@
 ﻿using AzureFunctions.Extensions.CognitiveServices.Services.Models;
-using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Services
@@ -23,6 +20,5 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
         Task<ServiceResultModel> PostAsync(string uri, string key, ByteArrayContent content, ReturnType returnType);
 
         Task<ServiceResultModel> GetAsync(string uri, string key, ReturnType returnType);
-
     }
 }

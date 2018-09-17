@@ -1,11 +1,8 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 {
- 
     public class Word
     {
 
@@ -56,5 +53,4 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
             return JsonConvert.SerializeObject(this);
         }
     }
-
 }

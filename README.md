@@ -163,7 +163,6 @@ Binding example with VisionAnalysis Attribute and VisionAnalysisClient binding:
 
 ```
 
-
 ### Current Azure Function Extensions for Cognitive Services Bindings
 
 #### VisionAnalysis
@@ -370,8 +369,6 @@ public static async Task Run(
 
 ##### Client Binding Example
 
-
-
 ```
 public static async Task Run(
            [BlobTrigger("visionrequest/{name}")]Stream storageBlob,
@@ -388,4 +385,3 @@ public static async Task Run(
             log.Info($"Image thumbnail generated");
         }
 ```
-
