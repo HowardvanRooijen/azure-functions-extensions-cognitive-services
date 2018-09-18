@@ -8,6 +8,8 @@
     using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail;
     using Microsoft.Azure.WebJobs;
     using System;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Options;
 
     public static class CognitiveServicesJobHostConfigurationExtensions
     {
@@ -34,7 +36,7 @@
         }
 
 /*        /// <summary>
-        ///     Adds the Durable Task extension to the provided <see cref="IWebJobsBuilder" />.
+        ///     Adds the Cognitive Services extension to the provided <see cref="IWebJobsBuilder" />.
         /// </summary>
         /// <param name="builder">The <see cref="IWebJobsBuilder" /> to configure.</param>
         /// <param name="options">The configuration options for this extension.</param>
@@ -56,7 +58,6 @@
         /// <param name="builder">The <see cref="IWebJobsBuilder" /> to configure.</param>
         /// <param name="configure">
         ///     An <see cref="Action{DurableTaskOptions}" /> to configure the provided
-        ///     <see cref="DurableTaskOptions" />.
         /// </param>
         /// <returns>Returns the modified <paramref name="builder" /> object.</returns>
         public static IWebJobsBuilder AddCognitiveServices(this IWebJobsBuilder builder, Action<DurableTaskOptions> configure)

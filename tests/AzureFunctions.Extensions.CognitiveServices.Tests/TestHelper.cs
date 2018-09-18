@@ -13,6 +13,10 @@
     using Microsoft.Azure.WebJobs.Host.Config;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Hosting;
+    using Microsoft.Extensions.Logging;
 
     #endregion 
 
@@ -57,17 +61,27 @@
 
         public static JobHost NewHost<T>(IExtensionConfigProvider ext)
         {
-            /*
-            JobHostConfiguration config = new JobHostConfiguration();
-            config.HostId = Guid.NewGuid().ToString("n");
-            config.StorageConnectionString = null;
-            config.DashboardConnectionString = null;
-            config.TypeLocator = new FakeTypeLocator<T>();
-            config.AddExtension(ext);
-            config.NameResolver = new NameResolver();
-            */
+            IHost host = new HostBuilder()
+                .ConfigureLogging(
+                    loggingBuilder =>
+                    {
+                        //loggingBuilder.AddProvider(loggerProvider);
+                    })
+                .ConfigureWebJobs(
+                    webJobsBuilder =>
+                    {
+                        webJobsBuilder.AddCognitiveServices();
+                    })
+                .ConfigureServices(
+                    serviceCollection =>
+                    {
+                        ITypeLocator typeLocator = new FakeTypeLocator<T>();
+                        serviceCollection.AddSingleton(typeLocator);
+                        serviceCollection.AddSingleton(new NameResolver());
+                    })
+                .Build();
 
-            return new JobHost(null, null);
+            return (JobHost)host.Services.GetService<IJobHost>();
         }
     }
 }
