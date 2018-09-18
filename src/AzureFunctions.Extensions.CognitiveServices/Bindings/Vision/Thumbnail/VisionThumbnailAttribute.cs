@@ -1,8 +1,8 @@
-﻿using Microsoft.Azure.WebJobs.Description;
-using System;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 {
+    using Microsoft.Azure.WebJobs.Description;
+    using System;
+
     [Binding]
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.ReturnValue)]
     public class VisionThumbnailAttribute : VisionAttributeBase

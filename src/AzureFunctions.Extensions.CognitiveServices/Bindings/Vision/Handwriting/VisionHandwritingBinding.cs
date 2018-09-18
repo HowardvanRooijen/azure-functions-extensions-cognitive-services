@@ -7,6 +7,7 @@
     using Microsoft.Azure.WebJobs.Host.Config;
     using Microsoft.Extensions.Logging;
     using System;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting.Model;
 
     #endregion 
 

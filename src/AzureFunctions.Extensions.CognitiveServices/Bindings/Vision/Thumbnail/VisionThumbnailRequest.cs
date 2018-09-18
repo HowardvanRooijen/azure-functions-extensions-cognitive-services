@@ -1,10 +1,14 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using Microsoft.Azure.WebJobs.Description;
-using System.ComponentModel.DataAnnotations;
-using System.IO;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using Microsoft.Azure.WebJobs.Description;
+    using System.ComponentModel.DataAnnotations;
+    using System.IO;
+
+    #endregion 
+
     public class VisionThumbnailRequest : VisionRequestBase
     {
         public VisionThumbnailRequest() { }
@@ -15,12 +19,12 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 
         public VisionThumbnailRequest(string imageUrl) : base(imageUrl) { }
 
-        [AutoResolve()]
+        [AutoResolve]
         [Required(ErrorMessage = VisionExceptionMessages.WidthMissing)]
         [Range(1, 1024, ErrorMessage = VisionExceptionMessages.ImageSizeOutOfRange)]
         public string Width { get; set; }
 
-        [AutoResolve()]
+        [AutoResolve]
         [Required(ErrorMessage = VisionExceptionMessages.HeightMissing)]
         [Range(1, 1024, ErrorMessage = VisionExceptionMessages.ImageSizeOutOfRange)]
         public string Height { get; set; }

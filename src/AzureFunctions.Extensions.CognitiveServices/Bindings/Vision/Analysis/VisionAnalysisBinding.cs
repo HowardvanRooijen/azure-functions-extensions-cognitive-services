@@ -7,19 +7,20 @@
     using Microsoft.Azure.WebJobs.Host.Config;
     using Microsoft.Extensions.Logging;
     using System;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis.Model;
 
     #endregion 
 
     public class VisionAnalysisBinding : IExtensionConfigProvider, IVisionBinding
     {
-        public ICognitiveServicesClient Client {get; set;}
-
         private readonly ILoggerFactory loggerFactory;
 
         public VisionAnalysisBinding(ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
         }
+
+        public ICognitiveServicesClient Client {get; set;}
 
         public void Initialize(ExtensionConfigContext context)
         {

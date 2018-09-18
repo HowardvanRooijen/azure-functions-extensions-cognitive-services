@@ -1,11 +1,16 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using Microsoft.Azure.WebJobs.Host.Config;
-using Microsoft.Extensions.Logging;
-using System;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using Microsoft.Azure.WebJobs.Host.Config;
+    using Microsoft.Extensions.Logging;
+    using System;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr.Model;
+
+    #endregion 
+
     public class VisionOcrBinding : IExtensionConfigProvider, IVisionBinding
     {
         private readonly ILoggerFactory loggerFactory;

@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using System.IO;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting
 {
+    using Newtonsoft.Json;
+    using System.IO;
+    
     public class VisionHandwritingRequest : VisionRequestBase
     {
         public VisionHandwritingRequest() { }

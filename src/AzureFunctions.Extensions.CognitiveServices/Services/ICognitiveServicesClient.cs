@@ -12,7 +12,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
 
     public interface ICognitiveServicesClient
     {
-
         HttpClient GetHttpClientInstance();
 
         Task<ServiceResultModel> PostAsync(string uri, string key, StringContent content, ReturnType returnType);

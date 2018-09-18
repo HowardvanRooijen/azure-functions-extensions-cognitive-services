@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision
 {
+    using Newtonsoft.Json;
+
     public class VisionUrlRequest
     {
         [JsonProperty(PropertyName = "url")]

@@ -1,14 +1,7 @@
-﻿using Newtonsoft.Json;
-using System.IO;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 {
-    public enum VisionDomainOptions
-    {
-        None=0,
-        Landmark=1,
-        Celebrity=2
-    }
+    using Newtonsoft.Json;
+    using System.IO;
 
     public class VisionDomainRequest : VisionRequestBase
     {

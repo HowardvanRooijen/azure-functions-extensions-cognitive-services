@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using System.IO;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 {
+    using Newtonsoft.Json;
+    using System.IO;
+
     public class VisionDescribeRequest : VisionRequestBase
     {
         public VisionDescribeRequest() { }

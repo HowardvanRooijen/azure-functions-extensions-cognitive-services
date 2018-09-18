@@ -1,33 +1,33 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services.Models;
-using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Timeout;
-using Polly.Wrap;
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Services
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Services
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services.Models;
+    using Microsoft.Extensions.Logging;
+    using Polly;
+    using Polly.Timeout;
+    using Polly.Wrap;
+    using System;
+    using System.Net;
+    using System.Net.Http;
+    using System.Net.Http.Headers;
+    using System.Threading.Tasks;
+
+    #endregion 
+
     public class CognitiveServicesClient : ICognitiveServicesClient
     {
-        private static HttpClient _client = new HttpClient();
-        private PolicyWrap<HttpResponseMessage> _retryPolicyWrapper;
-        private ILogger _log;
+        private static HttpClient httpClient = new HttpClient();
+        private PolicyWrap<HttpResponseMessage> retryPolicyWrapper;
+        private ILogger logger;
 
-        public HttpClient GetHttpClientInstance()
-        {
-            return _client;
-        }
 
         public CognitiveServicesClient(RetryPolicy retryPolicy, ILoggerFactory loggerFactory)
         {
-            this._log = loggerFactory?.CreateLogger("Host.Bindings.CognitiveServicesClient");
+            this.logger = loggerFactory?.CreateLogger("Host.Bindings.CognitiveServicesClient");
 
-            Random jitter = new Random();
+            Random random = new Random();
 
             var timeoutPolicy = Policy
                 .TimeoutAsync(TimeSpan.FromSeconds(retryPolicy.MaxRetryWaitTimeInSeconds), TimeoutStrategy.Pessimistic);
@@ -35,27 +35,30 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
             var throttleRetryPolicy = Policy
                 .HandleResult<HttpResponseMessage>(r => r.StatusCode == (HttpStatusCode)429)
                 .WaitAndRetryAsync(retryPolicy.MaxRetryAttemptsAfterThrottle,
-                                   retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(jitter.Next(0, 1000)),
+                                   retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(random.Next(0, 1000)),
                                    onRetry: (exception, retryCount, context) =>
                                    {
-                                       _log.LogWarning($"Cognitive Service - Retry {retryCount} of {context.PolicyKey}, due to 429 throttling.");
+                                       this.logger.LogWarning($"Cognitive Service - Retry {retryCount} of {context.PolicyKey}, due to 429 throttling.");
                                    });
 
-            _retryPolicyWrapper = timeoutPolicy.WrapAsync(throttleRetryPolicy);
+            this.retryPolicyWrapper = timeoutPolicy.WrapAsync(throttleRetryPolicy);
+        }
+
+        public HttpClient GetHttpClientInstance()
+        {
+            return httpClient;
         }
 
         public async Task<ServiceResultModel> PostAsync(string uri, string key, StringContent content, ReturnType returnType)
         {
-            var httpResponse = await _retryPolicyWrapper.ExecuteAsync(async () => {
+            var httpResponse = await this.retryPolicyWrapper.ExecuteAsync(async () => {
 
-                _client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
+                httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
 
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                var requestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
+                //var requestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
 
-                var response = await _client.PostAsync(uri, content);
-
-                return response;
+                return await httpClient.PostAsync(uri, content);
             });
 
             var result = new ServiceResultModel { HttpStatusCode = (int)httpResponse.StatusCode };
@@ -77,15 +80,13 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
 
         public async Task<ServiceResultModel> PostAsync(string uri, string key, ByteArrayContent content, ReturnType returnType)
         {
-            var httpResponse = await _retryPolicyWrapper.ExecuteAsync(async () => {
-                _client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
+            var httpResponse = await this.retryPolicyWrapper.ExecuteAsync(async () => {
+                httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
 
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                var requestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
+                //var requestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
 
-                var response = await _client.PostAsync(uri, content);
-
-                return response;
+                return await httpClient.PostAsync(uri, content);
             });
 
             var result = new ServiceResultModel { HttpStatusCode = (int)httpResponse.StatusCode };
@@ -107,13 +108,11 @@ namespace AzureFunctions.Extensions.CognitiveServices.Services
 
         public async Task<ServiceResultModel> GetAsync(string uri, string key, ReturnType returnType)
         {
-            var httpResponse = await _retryPolicyWrapper.ExecuteAsync(async () => {
+            var httpResponse = await this.retryPolicyWrapper.ExecuteAsync(async () => {
 
-                _client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
+                httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", key);
 
-                var response = await _client.GetAsync(uri);
-
-                return response;
+                return await httpClient.GetAsync(uri);
             });
 
             var result = new ServiceResultModel { HttpStatusCode = (int)httpResponse.StatusCode };

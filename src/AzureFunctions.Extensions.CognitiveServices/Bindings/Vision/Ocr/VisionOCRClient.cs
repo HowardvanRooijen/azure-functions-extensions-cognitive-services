@@ -1,15 +1,20 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using AzureFunctions.Extensions.CognitiveServices.Services.Models;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using AzureFunctions.Extensions.CognitiveServices.Services.Models;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
+    using System;
+    using System.Diagnostics;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr.Model;
+
+    #endregion 
+
     public class VisionOcrClient
     {
         private readonly IVisionBinding visionBinding;
@@ -25,7 +30,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 
         public async Task<VisionOcrModel> OCRAsync(VisionOcrRequest request)
         {
-            Stopwatch imageResizeSw = null;
+            Stopwatch stopwatch = null;
 
             var visionOperation = await this.MergePropertiesAsync(request, this.visionBinding, this.visionOcrAttribute);
 
@@ -37,7 +42,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
                     this.logger.LogWarning(VisionExceptionMessages.FileMissing);
                     throw new ArgumentException(VisionExceptionMessages.FileMissing);
                 }
-
 
                 if (!ImageResizeService.IsImage(visionOperation.ImageBytes))
                 {
@@ -55,15 +59,15 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
                 {
                     this.logger.LogTrace("Resizing Image");
 
-                    imageResizeSw = new Stopwatch();
+                    stopwatch = new Stopwatch();
 
-                    imageResizeSw.Start();
+                    stopwatch.Start();
 
                     visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                    imageResizeSw.Stop();
+                    stopwatch.Stop();
 
-                    this.logger.LogMetric("VisionOcrImageResizeDurationMillisecond", imageResizeSw.ElapsedMilliseconds);
+                    this.logger.LogMetric("VisionOcrImageResizeDurationMillisecond", stopwatch.ElapsedMilliseconds);
 
                     if (visionOperation.Oversized)
                     {

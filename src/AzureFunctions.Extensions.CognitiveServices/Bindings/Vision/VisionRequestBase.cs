@@ -1,10 +1,9 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using Newtonsoft.Json;
-using System;
-using System.IO;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision
 {
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using Newtonsoft.Json;
+    using System;
+    using System.IO;
     public abstract class VisionRequestBase
     {
         public VisionRequestBase() { }

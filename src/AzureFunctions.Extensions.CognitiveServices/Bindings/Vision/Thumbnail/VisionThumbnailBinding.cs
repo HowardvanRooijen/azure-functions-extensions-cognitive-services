@@ -1,14 +1,18 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using Microsoft.Azure.WebJobs.Host.Config;
-using Microsoft.Extensions.Logging;
-using System;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using Microsoft.Azure.WebJobs.Host.Config;
+    using Microsoft.Extensions.Logging;
+    using System;
+
+    #endregion 
+
     public class VisionThumbnailBinding : IExtensionConfigProvider, IVisionBinding
     {
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         public VisionThumbnailBinding(ILoggerFactory loggerFactory)
         {

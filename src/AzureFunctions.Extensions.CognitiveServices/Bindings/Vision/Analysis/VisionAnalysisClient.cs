@@ -1,16 +1,21 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using AzureFunctions.Extensions.CognitiveServices.Services.Models;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using AzureFunctions.Extensions.CognitiveServices.Services.Models;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis.Model;
+
+    #endregion
+
     public class VisionAnalysisClient
     {
         private readonly IVisionBinding visionBinding;
@@ -26,7 +31,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
 
         public async Task<VisionAnalysisModel> AnalyzeAsync(VisionAnalysisRequest request)
         {
-            Stopwatch imageResizeSw = null;
+            Stopwatch stopwatch = null;
 
             var visionOperation = await MergeProperties(request, this.visionBinding, this.visionAnalysisAttribute);
 
@@ -56,15 +61,15 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Analysis
                 {
                     this.logger.LogTrace("Resizing Image");
 
-                    imageResizeSw = new Stopwatch();
+                    stopwatch = new Stopwatch();
 
-                    imageResizeSw.Start();
+                    stopwatch.Start();
 
                     visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                    imageResizeSw.Stop();
+                    stopwatch.Stop();
 
-                    this.logger.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSw.ElapsedMilliseconds);
+                    this.logger.LogMetric("VisionAnalysisImageResizeDurationMillisecond", stopwatch.ElapsedMilliseconds);
 
                     if (visionOperation.Oversized)
                     {

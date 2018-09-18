@@ -1,20 +1,24 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using AzureFunctions.Extensions.CognitiveServices.Services.Models;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using AzureFunctions.Extensions.CognitiveServices.Services.Models;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
+    using System;
+    using System.Diagnostics;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+
+    #endregion 
+
     public class VisionThumbnailClient
     {
         private readonly IVisionBinding visionBinding;
-        private VisionThumbnailAttribute visionThumbnailAttribute;
-        private ILogger logger;
+        private readonly VisionThumbnailAttribute visionThumbnailAttribute;
+        private readonly ILogger logger;
 
         public VisionThumbnailClient(IVisionBinding visionBinding, VisionThumbnailAttribute visionThumbnailAttribute, ILoggerFactory loggerFactory)
         {

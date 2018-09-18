@@ -1,15 +1,20 @@
 ﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 {
+    #region Using Directives
+
     using System;
     using System.Diagnostics;
     using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain.Model;
     using AzureFunctions.Extensions.CognitiveServices.Config;
     using AzureFunctions.Extensions.CognitiveServices.Services;
     using AzureFunctions.Extensions.CognitiveServices.Services.Models;
     using Microsoft.Extensions.Logging;
     using Newtonsoft.Json;
+
+    #endregion 
 
     public class VisionDomainClient
     {
@@ -36,7 +41,7 @@
 
         private async Task<T> AnalyzeAsync<T>(VisionDomainRequest request)
         {
-            Stopwatch imageResizeSw = null;
+            Stopwatch stopwatch = null;
 
             var visionOperation = await this.MergePropertiesAsync(request, this.visionBinding, this.visionDomainAttribute);
 
@@ -67,14 +72,14 @@
                 {
                     this.logger.LogTrace("Resizing Image");
 
-                    imageResizeSw = new Stopwatch();
-                    imageResizeSw.Start();
+                    stopwatch = new Stopwatch();
+                    stopwatch.Start();
 
                     visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                    imageResizeSw.Stop();
+                    stopwatch.Stop();
 
-                    this.logger.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSw.ElapsedMilliseconds);
+                    this.logger.LogMetric("VisionAnalysisImageResizeDurationMillisecond", stopwatch.ElapsedMilliseconds);
 
                     if (visionOperation.Oversized)
                     {

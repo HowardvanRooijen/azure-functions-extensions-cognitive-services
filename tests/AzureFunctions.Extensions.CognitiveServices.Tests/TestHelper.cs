@@ -11,9 +11,6 @@
     using AzureFunctions.Extensions.CognitiveServices.Services;
     using Microsoft.Azure.WebJobs;
     using Microsoft.Azure.WebJobs.Host.Config;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Logging;
-    using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
 
@@ -71,54 +68,6 @@
             */
 
             return new JobHost(null, null);
-        }
-    }
-
-    public class NameResolver : INameResolver
-    {
-        IConfigurationRoot config;
-
-        public NameResolver()
-        {
-            this.config = new ConfigurationBuilder()
-                .AddJsonFile("local.settings.json")
-                .Build();
-
-        }
-        public string Resolve(string name)
-        {
-            name = $"Values:{name}";
-
-            var value = this.config[name].ToString();
-
-            return value;
-        }
-    }
-
-    public class FakeTypeLocator<T> : ITypeLocator
-    {
-        public IReadOnlyList<Type> Types => new Type[] { typeof(T) };
-
-        public IReadOnlyList<Type> GetTypes()
-        {
-            return Types;
-        }
-    }
-
-    public class FakeLoggerFactory : ILoggerFactory
-    {
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
-
-        public ILogger CreateLogger(string categoryName)
-        {
-            return default(ILogger);
-        }
-
-        public void AddProvider(ILoggerProvider provider)
-        {
         }
     }
 }

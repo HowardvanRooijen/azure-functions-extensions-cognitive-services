@@ -1,18 +1,23 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using AzureFunctions.Extensions.CognitiveServices.Services.Models;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Polly;
-using Polly.Timeout;
-using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using AzureFunctions.Extensions.CognitiveServices.Services.Models;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
+    using Polly;
+    using Polly.Timeout;
+    using System;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting.Model;
+
+    #endregion 
+
     public class VisionHandwritingClient
     {
         private readonly IVisionBinding visionBinding;
@@ -28,7 +33,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
 
         public async Task<VisionHandwritingModel> HandwritingAsync(VisionHandwritingRequest request)
         {
-            Stopwatch imageResizeSw = null;
+            Stopwatch stopwatch = null;
 
             var visionOperation = await this.MergePropertiesAsync(request, this.visionBinding, this.visionHandwritingAttribute);
 
@@ -58,14 +63,14 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
                 {
                     this.logger.LogTrace("Resizing Image");
 
-                    imageResizeSw = new Stopwatch();
-                    imageResizeSw.Start();
+                    stopwatch = new Stopwatch();
+                    stopwatch.Start();
 
                     visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                    imageResizeSw.Stop();
+                    stopwatch.Stop();
 
-                    this.logger.LogMetric("VisionOcrImageResizeDurationMillisecond", imageResizeSw.ElapsedMilliseconds);
+                    this.logger.LogMetric("VisionOcrImageResizeDurationMillisecond", stopwatch.ElapsedMilliseconds);
 
                     if (visionOperation.Oversized)
                     {

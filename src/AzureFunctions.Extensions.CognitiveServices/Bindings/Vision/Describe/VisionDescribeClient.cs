@@ -1,15 +1,20 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using AzureFunctions.Extensions.CognitiveServices.Services.Models;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using AzureFunctions.Extensions.CognitiveServices.Services.Models;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
+    using System;
+    using System.Diagnostics;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe.Model;
+
+    #endregion 
+
     public class VisionDescribeClient
     {
         IVisionBinding visionBinding;
@@ -27,7 +32,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
         {
             try
             {
-                Stopwatch imageResizeSW = null;
+                Stopwatch stopwatch = null;
 
                 var visionOperation = await MergeProperties(request, this.visionBinding, this.attribute);
 
@@ -57,15 +62,15 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
                     {
                         this.logger.LogTrace("Resizing Image");
 
-                        imageResizeSW = new Stopwatch();
+                        stopwatch = new Stopwatch();
 
-                        imageResizeSW.Start();
+                        stopwatch.Start();
 
                         visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                        imageResizeSW.Stop();
+                        stopwatch.Stop();
 
-                        this.logger.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSW.ElapsedMilliseconds);
+                        this.logger.LogMetric("VisionAnalysisImageResizeDurationMillisecond", stopwatch.ElapsedMilliseconds);
 
                         if (visionOperation.Oversized)
                         {

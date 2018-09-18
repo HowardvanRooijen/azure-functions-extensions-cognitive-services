@@ -1,18 +1,20 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Services;
-using AzureFunctions.Extensions.CognitiveServices.Services.Models;
-using AzureFunctions.Extensions.CognitiveServices.Tests.Resources;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Tests
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Tests
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using AzureFunctions.Extensions.CognitiveServices.Services.Models;
+    using AzureFunctions.Extensions.CognitiveServices.Tests.Resources;
+    using System;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+
+    #endregion 
+
     public class TestCognitiveServicesClient : ICognitiveServicesClient
     {
         public Task<ServiceResultModel> GetAsync(string uri, string key, ReturnType returnType)
-        {   
+        {
             throw new NotImplementedException();
         }
 
@@ -25,17 +27,17 @@ namespace AzureFunctions.Extensions.CognitiveServices.Tests
         {
             ServiceResultModel result = null;
 
-            if (uri.Contains("analyze") == true)
+            if (uri.Contains("analyze"))
             {
                 result = new ServiceResultModel { HttpStatusCode = 200, Contents = MockResults.VisionAnalysisResults };
             }
 
-            if (uri.Contains("vision") == true)
+            if (uri.Contains("vision"))
             {
                 result =  new ServiceResultModel { HttpStatusCode = 200, Contents = MockResults.VisionAnalysisResults };
             }
 
-            if (uri.Contains("describe") == true)
+            if (uri.Contains("describe"))
             {
                 result = new ServiceResultModel { HttpStatusCode = 200, Contents = MockResults.VisionDescribeResults };
             }
@@ -43,7 +45,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Tests
             if (returnType == ReturnType.Binary)
             {
                 result = new ServiceResultModel { HttpStatusCode = 200, Binary = MockResults.SamplePhoto };
-
             }
 
             return Task.FromResult<ServiceResultModel>(result);
@@ -55,27 +56,25 @@ namespace AzureFunctions.Extensions.CognitiveServices.Tests
 
             if (returnType == ReturnType.String)
             {
-                if (uri.Contains("analyze") == true)
+                if (uri.Contains("analyze"))
                 {
                     result = new ServiceResultModel { HttpStatusCode = 200, Contents = MockResults.VisionAnalysisResults };
                 }
 
-                if (uri.Contains("vision") == true)
+                if (uri.Contains("vision"))
                 {
                     result = new ServiceResultModel { HttpStatusCode = 200, Contents = MockResults.VisionAnalysisResults };
                 }
 
-                if (uri.Contains("describe") == true)
+                if (uri.Contains("describe"))
                 {
                     result = new ServiceResultModel { HttpStatusCode = 200, Contents = MockResults.VisionDescribeResults };
                 }
-
             }
 
             if (returnType == ReturnType.Binary)
             {
                 result = new ServiceResultModel { HttpStatusCode = 200, Binary = MockResults.SamplePhoto };
- 
             }
 
             return Task.FromResult<ServiceResultModel>(result);

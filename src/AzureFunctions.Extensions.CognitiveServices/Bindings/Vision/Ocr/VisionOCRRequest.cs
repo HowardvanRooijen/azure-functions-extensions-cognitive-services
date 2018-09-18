@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using System.IO;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 {
+    using Newtonsoft.Json;
+    using System.IO;
+
     public class VisionOcrRequest : VisionRequestBase
     {
         public VisionOcrRequest() { }

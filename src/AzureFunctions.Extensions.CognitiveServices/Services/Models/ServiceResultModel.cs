@@ -1,7 +1,7 @@
-﻿using System.Net.Http.Headers;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Services.Models
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Services.Models
 {
+    using System.Net.Http.Headers;
+
     public class ServiceResultModel
     {
         public int HttpStatusCode { get; set; }

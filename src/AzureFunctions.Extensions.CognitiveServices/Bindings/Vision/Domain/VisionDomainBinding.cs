@@ -1,11 +1,16 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using Microsoft.Azure.WebJobs.Host.Config;
-using Microsoft.Extensions.Logging;
-using System;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 {
+    #region Using Directives
+
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using Microsoft.Azure.WebJobs.Host.Config;
+    using Microsoft.Extensions.Logging;
+    using System;
+    using AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain.Model;
+
+    #endregion 
+
     public class VisionDomainBinding : IExtensionConfigProvider, IVisionBinding
     {
         private readonly ILoggerFactory loggerFactory;

@@ -1,8 +1,8 @@
-﻿using Microsoft.Azure.WebJobs.Description;
-using System;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwriting
 {
+    using Microsoft.Azure.WebJobs.Description;
+    using System;
+
     [Binding]
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.ReturnValue)]
 
