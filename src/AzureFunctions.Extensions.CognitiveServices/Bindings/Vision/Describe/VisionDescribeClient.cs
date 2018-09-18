@@ -12,15 +12,15 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 {
     public class VisionDescribeClient
     {
-        IVisionBinding _config;
-        VisionDescribeAttribute _attr;
-        ILogger _log;
+        IVisionBinding visionBinding;
+        VisionDescribeAttribute attribute;
+        ILogger logger;
 
-        public VisionDescribeClient(IVisionBinding config, VisionDescribeAttribute attr, ILoggerFactory loggerFactory)
+        public VisionDescribeClient(IVisionBinding visionBinding, VisionDescribeAttribute attribute, ILoggerFactory loggerFactory)
         {
-            this._config = config;
-            this._attr = attr;
-            this._log = loggerFactory?.CreateLogger("Host.Bindings.VisionDescribe");
+            this.visionBinding = visionBinding;
+            this.attribute = attribute;
+            this.logger = loggerFactory?.CreateLogger("Host.Bindings.VisionDescribe");
         }
 
         public async Task<VisionDescribeModel> DescribeAsync(VisionDescribeRequest request)
@@ -29,33 +29,33 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
             {
                 Stopwatch imageResizeSW = null;
 
-                var visionOperation = await MergeProperties(request, this._config, this._attr);
+                var visionOperation = await MergeProperties(request, this.visionBinding, this.attribute);
 
-                if (request.IsUrlImageSource == false)
+                if (!request.IsUrlImageSource)
                 {
 
                     if (visionOperation.ImageBytes == null || visionOperation.ImageBytes.Length == 0)
                     {
-                        _log.LogWarning(VisionExceptionMessages.FileMissing);
+                        this.logger.LogWarning(VisionExceptionMessages.FileMissing);
                         throw new ArgumentException(VisionExceptionMessages.FileMissing);
                     }
 
-                    if (ImageResizeService.IsImage(visionOperation.ImageBytes) == false)
+                    if (!ImageResizeService.IsImage(visionOperation.ImageBytes))
                     {
-                        _log.LogWarning(VisionExceptionMessages.InvalidFileType);
+                        this.logger.LogWarning(VisionExceptionMessages.InvalidFileType);
                         throw new ArgumentException(VisionExceptionMessages.InvalidFileType);
                     }
 
-                    if (visionOperation.Oversized == true && visionOperation.AutoResize == false)
+                    if (visionOperation.Oversized && !visionOperation.AutoResize)
                     {
-                        var message = string.Format(VisionExceptionMessages.FileTooLarge,
-                                                        VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                        _log.LogWarning(message);
+                        var message = string.Format(VisionExceptionMessages.FileTooLarge, VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
+                        this.logger.LogWarning(message);
                         throw new ArgumentException(message);
                     }
-                    else if (visionOperation.Oversized == true && visionOperation.AutoResize == true)
+
+                    if (visionOperation.Oversized && visionOperation.AutoResize)
                     {
-                        _log.LogTrace("Resizing Image");
+                        this.logger.LogTrace("Resizing Image");
 
                         imageResizeSW = new Stopwatch();
 
@@ -65,21 +65,19 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 
                         imageResizeSW.Stop();
 
-                        _log.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSW.ElapsedMilliseconds);
+                        this.logger.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSW.ElapsedMilliseconds);
 
                         if (visionOperation.Oversized)
                         {
                             var message = string.Format(VisionExceptionMessages.FileTooLargeAfterResize,
-                                                            VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                            _log.LogWarning(message);
+                                VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
+                            this.logger.LogWarning(message);
                             throw new ArgumentException(message);
                         }
                     }
                 }
 
-                var result = await SubmitRequest(visionOperation);
-
-                return result;
+                return await this.SubmitRequestAsync(visionOperation);
             }
             catch(Exception ex )
             {
@@ -87,7 +85,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
             }
         }
 
-        private async Task<VisionDescribeModel> SubmitRequest(VisionDescribeRequest request)
+        private async Task<VisionDescribeModel> SubmitRequestAsync(VisionDescribeRequest request)
         {
             Stopwatch sw = new Stopwatch();
 
@@ -97,7 +95,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 
             if (request.IsUrlImageSource)
             {
-                _log.LogTrace($"Submitting Vision Describe Request");
+                this.logger.LogTrace($"Submitting Vision Describe Request");
 
                 var urlRequest = new VisionUrlRequest { Url = request.ImageUrl };
                 var requestContent = JsonConvert.SerializeObject(urlRequest);
@@ -106,35 +104,34 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 
                 sw.Start();
 
-                requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.String);
+                requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.String);
 
                 sw.Stop();
 
-                _log.LogMetric("VisionRequestDurationMillisecond", sw.ElapsedMilliseconds);
+                this.logger.LogMetric("VisionRequestDurationMillisecond", sw.ElapsedMilliseconds);
             }
             else
             {
                 using (ByteArrayContent content = new ByteArrayContent(request.ImageBytes))
                 {
-                    requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.String);
+                    requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.String);
                 }
             }
 
             if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.OK)
             {
-                _log.LogTrace($"Describe Request Results: {requestResult.Contents}");
+                this.logger.LogTrace($"Describe Request Results: {requestResult.Contents}");
 
-                VisionDescribeModel result = JsonConvert.DeserializeObject<VisionDescribeModel>(requestResult.Contents);
-
-                return result;
+                return JsonConvert.DeserializeObject<VisionDescribeModel>(requestResult.Contents);
             }
-            else if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
+
+            if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
             {
 
                 VisionErrorModel error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, error.Code, error.Message);
 
-                _log.LogWarning(message);
+                this.logger.LogWarning(message);
 
                 throw new Exception(message);
             }
@@ -142,7 +139,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
             {
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, requestResult.HttpStatusCode, requestResult.Contents);
 
-                _log.LogError(message);
+                this.logger.LogError(message);
 
                 throw new Exception(message);
             }
@@ -150,7 +147,6 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 
         private async Task<VisionDescribeRequest> MergeProperties(VisionDescribeRequest operation, IVisionBinding config, VisionDescribeAttribute attr)
         {
-
             var visionOperation = new VisionDescribeRequest
             {
                 Url = attr.VisionUrl ?? operation.Url,
@@ -164,13 +160,13 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Describe
 
             if (string.IsNullOrEmpty(visionOperation.Key) && string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                _log.LogWarning(VisionExceptionMessages.KeyMissing);
+                this.logger.LogWarning(VisionExceptionMessages.KeyMissing);
                 throw new ArgumentException(VisionExceptionMessages.KeyMissing);
             }
 
             if (!string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                HttpClient httpClient = this._config.Client.GetHttpClientInstance();
+                HttpClient httpClient = this.visionBinding.Client.GetHttpClientInstance();
 
                 visionOperation.Key = await KeyVaultServices.GetValue(visionOperation.SecureKey, httpClient);
             }

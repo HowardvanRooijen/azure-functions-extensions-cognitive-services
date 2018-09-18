@@ -12,76 +12,72 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 {
     public class VisionOcrClient
     {
-        IVisionBinding _config;
-        VisionOcrAttribute _attr;
-        ILogger _log;
+        private readonly IVisionBinding visionBinding;
+        private readonly VisionOcrAttribute visionOcrAttribute;
+        private readonly ILogger logger;
 
-        public VisionOcrClient(IVisionBinding config, VisionOcrAttribute attr, ILoggerFactory loggerFactory)
+        public VisionOcrClient(IVisionBinding visionBinding, VisionOcrAttribute visionOcrAttribute, ILoggerFactory loggerFactory)
         {
-            this._config = config;
-            this._attr = attr;
-            this._log = loggerFactory?.CreateLogger("Host.Bindings.VisionOcr");
+            this.visionBinding = visionBinding;
+            this.visionOcrAttribute = visionOcrAttribute;
+            this.logger = loggerFactory?.CreateLogger("Host.Bindings.VisionOcr");
         }
 
         public async Task<VisionOcrModel> OCRAsync(VisionOcrRequest request)
         {
-            Stopwatch imageResizeSW = null;
+            Stopwatch imageResizeSw = null;
 
-            var visionOperation = await MergeProperties(request, this._config, this._attr);
+            var visionOperation = await this.MergePropertiesAsync(request, this.visionBinding, this.visionOcrAttribute);
 
             if (request.IsUrlImageSource == false)
             {
 
                 if (visionOperation.ImageBytes == null || visionOperation.ImageBytes.Length == 0)
                 {
-                    _log.LogWarning(VisionExceptionMessages.FileMissing);
+                    this.logger.LogWarning(VisionExceptionMessages.FileMissing);
                     throw new ArgumentException(VisionExceptionMessages.FileMissing);
                 }
 
 
-                if (ImageResizeService.IsImage(visionOperation.ImageBytes) == false)
+                if (!ImageResizeService.IsImage(visionOperation.ImageBytes))
                 {
-                    _log.LogWarning(VisionExceptionMessages.InvalidFileType);
+                    this.logger.LogWarning(VisionExceptionMessages.InvalidFileType);
                     throw new ArgumentException(VisionExceptionMessages.InvalidFileType);
                 }
 
-                if (visionOperation.Oversized == true && visionOperation.AutoResize == false)
+                if (visionOperation.Oversized && !visionOperation.AutoResize)
                 {
-                    var message = string.Format(VisionExceptionMessages.FileTooLarge,
-                                                    VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                    _log.LogWarning(message);
+                    var message = string.Format(VisionExceptionMessages.FileTooLarge, VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
+                    this.logger.LogWarning(message);
                     throw new ArgumentException(message);
                 }
-                else if (visionOperation.Oversized == true && visionOperation.AutoResize == true)
+                else if (visionOperation.Oversized && visionOperation.AutoResize)
                 {
-                    _log.LogTrace("Resizing Image");
+                    this.logger.LogTrace("Resizing Image");
 
-                    imageResizeSW = new Stopwatch();
+                    imageResizeSw = new Stopwatch();
 
-                    imageResizeSW.Start();
+                    imageResizeSw.Start();
 
                     visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                    imageResizeSW.Stop();
+                    imageResizeSw.Stop();
 
-                    _log.LogMetric("VisionOcrImageResizeDurationMillisecond", imageResizeSW.ElapsedMilliseconds);
+                    this.logger.LogMetric("VisionOcrImageResizeDurationMillisecond", imageResizeSw.ElapsedMilliseconds);
 
                     if (visionOperation.Oversized)
                     {
-                        var message = string.Format(VisionExceptionMessages.FileTooLargeAfterResize,
-                                                        VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                        _log.LogWarning(message);
+                        var message = string.Format(VisionExceptionMessages.FileTooLargeAfterResize, VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
+                        this.logger.LogWarning(message);
                         throw new ArgumentException(message);
                     }
                 }
             }
 
-            var result = await SubmitRequest(visionOperation);
-
-            return result;
+            return await this.SubmitRequestAsync(visionOperation);
         }
 
-        private async Task<VisionOcrModel> SubmitRequest(VisionOcrRequest request)
+        private async Task<VisionOcrModel> SubmitRequestAsync(VisionOcrRequest request)
         {
             Stopwatch sw = new Stopwatch();
 
@@ -92,7 +88,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 
             if (request.IsUrlImageSource)
             {
-                _log.LogTrace($"Submitting Vision Ocr Request");
+                this.logger.LogTrace($"Submitting Vision Ocr Request");
 
                 var urlRequest = new VisionUrlRequest { Url = request.ImageUrl };
                 var requestContent = JsonConvert.SerializeObject(urlRequest);
@@ -101,36 +97,34 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
 
                 sw.Start();
 
-                requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.String);
+                requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.String);
 
                 sw.Stop();
 
-                _log.LogMetric("VisionOCRDurationMillisecond", sw.ElapsedMilliseconds);
+                this.logger.LogMetric("VisionOCRDurationMillisecond", sw.ElapsedMilliseconds);
 
             }
             else
             {
                 using (ByteArrayContent content = new ByteArrayContent(request.ImageBytes))
                 {
-                    requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.String);
+                    requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.String);
                 }
             }
 
             if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.OK)
             {
-                _log.LogTrace($"OCR Request Results: {requestResult.Contents}");
+                this.logger.LogTrace($"OCR Request Results: {requestResult.Contents}");
 
-                VisionOcrModel result = JsonConvert.DeserializeObject<VisionOcrModel>(requestResult.Contents);
-
-                return result;
+                return JsonConvert.DeserializeObject<VisionOcrModel>(requestResult.Contents);
             }
-            else if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
-            {
 
-                VisionErrorModel error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
+            if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
+            {
+                var error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, error.Code, error.Message);
 
-                _log.LogWarning(message);
+                this.logger.LogWarning(message);
 
                 throw new Exception(message);
             }
@@ -138,13 +132,13 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
             {
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, requestResult.HttpStatusCode, requestResult.Contents);
 
-                _log.LogError(message);
+                this.logger.LogError(message);
 
                 throw new Exception(message);
             }
         }
 
-        private async Task<VisionOcrRequest> MergeProperties(VisionOcrRequest operation, IVisionBinding config, VisionOcrAttribute attr)
+        private async Task<VisionOcrRequest> MergePropertiesAsync(VisionOcrRequest operation, IVisionBinding config, VisionOcrAttribute attr)
         {
             var visionOperation = new VisionOcrRequest
             {
@@ -154,18 +148,18 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Ocr
                 AutoResize = attr.AutoResize,
                 ImageUrl = string.IsNullOrEmpty(operation.ImageUrl) ? attr.ImageUrl : operation.ImageUrl,
                 ImageBytes = operation.ImageBytes,
-                DetectOrientation = attr.DetectOrientation.HasValue ? attr.DetectOrientation.Value : operation.DetectOrientation
+                DetectOrientation = attr.DetectOrientation ?? operation.DetectOrientation
             };
 
             if (string.IsNullOrEmpty(visionOperation.Key) && string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                _log.LogWarning(VisionExceptionMessages.KeyMissing);
+                this.logger.LogWarning(VisionExceptionMessages.KeyMissing);
                 throw new ArgumentException(VisionExceptionMessages.KeyMissing);
             }
 
             if (!string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                HttpClient httpClient = this._config.Client.GetHttpClientInstance();
+                HttpClient httpClient = this.visionBinding.Client.GetHttpClientInstance();
 
                 visionOperation.Key = await KeyVaultServices.GetValue(visionOperation.SecureKey, httpClient);
             }

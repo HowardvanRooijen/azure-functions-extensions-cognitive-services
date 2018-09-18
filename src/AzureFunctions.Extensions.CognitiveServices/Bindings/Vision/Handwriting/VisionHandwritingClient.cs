@@ -15,77 +15,71 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
 {
     public class VisionHandwritingClient
     {
-        IVisionBinding _config;
-        VisionHandwritingAttribute _attr;
-        ILogger _log;
+        private readonly IVisionBinding visionBinding;
+        private readonly VisionHandwritingAttribute visionHandwritingAttribute;
+        private readonly ILogger logger;
 
-        public VisionHandwritingClient(IVisionBinding config, VisionHandwritingAttribute attr, ILoggerFactory loggerFactory)
+        public VisionHandwritingClient(IVisionBinding visionBinding, VisionHandwritingAttribute visionHandwritingAttribute, ILoggerFactory loggerFactory)
         {
-            this._config = config;
-            this._attr = attr;
-            this._log = loggerFactory?.CreateLogger("Host.Bindings.VisionHandwriting");
+            this.visionBinding = visionBinding;
+            this.visionHandwritingAttribute = visionHandwritingAttribute;
+            this.logger = loggerFactory?.CreateLogger("Host.Bindings.VisionHandwriting");
         }
 
         public async Task<VisionHandwritingModel> HandwritingAsync(VisionHandwritingRequest request)
         {
-            Stopwatch imageResizeSW = null;
+            Stopwatch imageResizeSw = null;
 
-            var visionOperation = await MergeProperties(request, this._config, this._attr);
+            var visionOperation = await this.MergePropertiesAsync(request, this.visionBinding, this.visionHandwritingAttribute);
 
             if (request.IsUrlImageSource == false)
             {
-
                 if (visionOperation.ImageBytes == null || visionOperation.ImageBytes.Length == 0)
                 {
-                    _log.LogWarning(VisionExceptionMessages.FileMissing);
+                    this.logger.LogWarning(VisionExceptionMessages.FileMissing);
                     throw new ArgumentException(VisionExceptionMessages.FileMissing);
                 }
 
 
-                if (ImageResizeService.IsImage(visionOperation.ImageBytes) == false)
+                if (!ImageResizeService.IsImage(visionOperation.ImageBytes))
                 {
-                    _log.LogWarning(VisionExceptionMessages.InvalidFileType);
+                    this.logger.LogWarning(VisionExceptionMessages.InvalidFileType);
                     throw new ArgumentException(VisionExceptionMessages.InvalidFileType);
                 }
 
-                if (visionOperation.Oversized == true && visionOperation.AutoResize == false)
+                if (visionOperation.Oversized && !visionOperation.AutoResize)
                 {
                     var message = string.Format(VisionExceptionMessages.FileTooLarge,
                                                     VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                    _log.LogWarning(message);
+                    this.logger.LogWarning(message);
                     throw new ArgumentException(message);
                 }
-                else if (visionOperation.Oversized == true && visionOperation.AutoResize == true)
+                else if (visionOperation.Oversized && visionOperation.AutoResize)
                 {
-                    _log.LogTrace("Resizing Image");
+                    this.logger.LogTrace("Resizing Image");
 
-                    imageResizeSW = new Stopwatch();
-
-                    imageResizeSW.Start();
+                    imageResizeSw = new Stopwatch();
+                    imageResizeSw.Start();
 
                     visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                    imageResizeSW.Stop();
+                    imageResizeSw.Stop();
 
-                    _log.LogMetric("VisionOcrImageResizeDurationMillisecond", imageResizeSW.ElapsedMilliseconds);
+                    this.logger.LogMetric("VisionOcrImageResizeDurationMillisecond", imageResizeSw.ElapsedMilliseconds);
 
                     if (visionOperation.Oversized)
                     {
-                        var message = string.Format(VisionExceptionMessages.FileTooLargeAfterResize,
-                                                        VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                        _log.LogWarning(message);
+                        var message = string.Format(VisionExceptionMessages.FileTooLargeAfterResize, VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
+                        this.logger.LogWarning(message);
                         throw new ArgumentException(message);
                     }
-
                 }
             }
 
-            var result = await SubmitRequest(visionOperation);
-
-            return result;
+            return await this.SubmitRequestAsync(visionOperation);
         }
 
-        private async Task<VisionHandwritingModel> SubmitRequest(VisionHandwritingRequest request)
+        private async Task<VisionHandwritingModel> SubmitRequestAsync(VisionHandwritingRequest request)
         {
             Stopwatch sw = new Stopwatch();
 
@@ -96,27 +90,25 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
 
             if (request.IsUrlImageSource)
             {
-                _log.LogTrace($"Submitting Vision Handwriting Request");
+                this.logger.LogTrace($"Submitting Vision Handwriting Request");
 
                 var urlRequest = new VisionUrlRequest { Url = request.ImageUrl };
                 var requestContent = JsonConvert.SerializeObject(urlRequest);
-
                 var content = new StringContent(requestContent);
 
                 sw.Start();
 
-                requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.String);
+                requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.String);
 
                 sw.Stop();
 
-                _log.LogMetric("VisionHandwritingDurationMillisecond", sw.ElapsedMilliseconds);
-
+                this.logger.LogMetric("VisionHandwritingDurationMillisecond", sw.ElapsedMilliseconds);
             }
             else
             {
                 using (ByteArrayContent content = new ByteArrayContent(request.ImageBytes))
                 {
-                    requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.String);
+                    requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.String);
                 }
             }
 
@@ -127,20 +119,17 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
 
                 operationLocation = requestResult.Headers.GetValues("Operation-Location").FirstOrDefault();
 
-                _log.LogTrace($"Handwriting Request Async Operation Url (Polling) : {operationLocation}");
+                this.logger.LogTrace($"Handwriting Request Async Operation Url (Polling) : {operationLocation}");
 
-                VisionHandwritingModel result = await CheckForResult(operationLocation, request);
-
-                return result;
+                return await CheckForResult(operationLocation, request);
             }
 
             if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
             {
-
-                VisionErrorModel error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
+                var error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, error.Code, error.Message);
 
-                this._log.LogWarning(message);
+                this.logger.LogWarning(message);
 
                 throw new Exception(message);
             }
@@ -148,7 +137,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
             {
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, requestResult.HttpStatusCode, requestResult.Contents);
 
-                this._log.LogError(message);
+                this.logger.LogError(message);
 
                 throw new Exception(message);
             }
@@ -156,8 +145,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
 
         private async Task<VisionHandwritingModel> CheckForResult(string operationUrl, VisionHandwritingRequest request)
         {
-
-            PollingPolicy policy = new PollingPolicy();
+            var policy = new PollingPolicy();
 
             Random jitter = new Random();
 
@@ -170,7 +158,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
                                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(jitter.Next(0, 1000)),
                                    onRetry: (exception, retryCount, context) =>
                                    {
-                                       _log.LogWarning($"Cognitive Service - Polling for Handwriting {retryCount} of {context.PolicyKey}, due to no status of Succeeded.");
+                                       this.logger.LogWarning($"Cognitive Service - Polling for Handwriting {retryCount} of {context.PolicyKey}, due to no status of Succeeded.");
                                    }
                 );
 
@@ -178,22 +166,20 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
 
             var visionHandwritingModel = await pollingWrapper.ExecuteAsync(async () => {
 
-                var requestResult = await this._config.Client.GetAsync(operationUrl, request.Key, ReturnType.String);
+                var requestResult = await this.visionBinding.Client.GetAsync(operationUrl, request.Key, ReturnType.String);
 
                 if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.OK)
                 {
-                    VisionHandwritingModel result = JsonConvert.DeserializeObject<VisionHandwritingModel>(requestResult.Contents);
-
-                    return result;
+                    return JsonConvert.DeserializeObject<VisionHandwritingModel>(requestResult.Contents);
 
                 }
-                else if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
-                {
 
-                    VisionErrorModel error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
+                if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
+                {
+                    var error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
                     var message = string.Format(VisionExceptionMessages.CognitiveServicesException, error.Code, error.Message);
 
-                    _log.LogWarning(message);
+                    this.logger.LogWarning(message);
 
                     throw new Exception(message);
                 }
@@ -201,17 +187,16 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
                 {
                     var message = string.Format(VisionExceptionMessages.CognitiveServicesException, requestResult.HttpStatusCode, requestResult.Contents);
 
-                    _log.LogError(message);
+                    this.logger.LogError(message);
 
                     throw new Exception(message);
                 }
-
             });
 
             return visionHandwritingModel;
         }
 
-        private async Task<VisionHandwritingRequest> MergeProperties(VisionHandwritingRequest operation, IVisionBinding config, VisionHandwritingAttribute attr)
+        private async Task<VisionHandwritingRequest> MergePropertiesAsync(VisionHandwritingRequest operation, IVisionBinding config, VisionHandwritingAttribute attr)
         {
             var visionOperation = new VisionHandwritingRequest
             {
@@ -221,18 +206,18 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Handwritin
                 AutoResize = attr.AutoResize,
                 ImageUrl = string.IsNullOrEmpty(operation.ImageUrl) ? attr.ImageUrl : operation.ImageUrl,
                 ImageBytes = operation.ImageBytes,
-                Handwriting = attr.Handwriting.HasValue ? attr.Handwriting.Value : operation.Handwriting
+                Handwriting = attr.Handwriting ?? operation.Handwriting
             };
 
             if (string.IsNullOrEmpty(visionOperation.Key) && string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                _log.LogWarning(VisionExceptionMessages.KeyMissing);
+                this.logger.LogWarning(VisionExceptionMessages.KeyMissing);
                 throw new ArgumentException(VisionExceptionMessages.KeyMissing);
             }
 
             if (!string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                HttpClient httpClient = this._config.Client.GetHttpClientInstance();
+                HttpClient httpClient = this.visionBinding.Client.GetHttpClientInstance();
 
                 visionOperation.Key = await KeyVaultServices.GetValue(visionOperation.SecureKey, httpClient);
             }

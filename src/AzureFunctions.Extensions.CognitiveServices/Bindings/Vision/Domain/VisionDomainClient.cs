@@ -1,167 +1,98 @@
-﻿using AzureFunctions.Extensions.CognitiveServices.Config;
-using AzureFunctions.Extensions.CognitiveServices.Services;
-using AzureFunctions.Extensions.CognitiveServices.Services.Models;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System;
-using System.Diagnostics;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
+﻿namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
 {
+    using System;
+    using System.Diagnostics;
+    using System.Net;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+    using AzureFunctions.Extensions.CognitiveServices.Config;
+    using AzureFunctions.Extensions.CognitiveServices.Services;
+    using AzureFunctions.Extensions.CognitiveServices.Services.Models;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
+
     public class VisionDomainClient
     {
-        IVisionBinding _config;
-        VisionDomainAttribute _attr;
-        ILogger _log;
+        private readonly ILogger logger;
+        private readonly IVisionBinding visionBinding;
+        private readonly VisionDomainAttribute visionDomainAttribute;
 
-        public VisionDomainClient(IVisionBinding config, VisionDomainAttribute attr, ILoggerFactory loggerFactory)
+        public VisionDomainClient(IVisionBinding visionBinding, VisionDomainAttribute visionDomainAttribute, ILoggerFactory loggerFactory)
         {
-            this._config = config;
-            this._attr = attr;
-            this._log = loggerFactory?.CreateLogger("Host.Bindings.VisionDomain");
+            this.visionBinding = visionBinding;
+            this.visionDomainAttribute = visionDomainAttribute;
+            this.logger = loggerFactory?.CreateLogger("Host.Bindings.VisionDomain");
         }
 
-        public async Task<VisionDomainCelebrityModel> AnalyzeCelebrityAsync(VisionDomainRequest request)
+        public Task<VisionDomainCelebrityModel> AnalyzeCelebrityAsync(VisionDomainRequest request)
         {
-            var result = await AnalyzeAsync<VisionDomainCelebrityModel>(request);
-
-            return result;
+            return this.AnalyzeAsync<VisionDomainCelebrityModel>(request);
         }
 
-        public async Task<VisionDomainLandmarkModel> AnalyzeLandmarkAsync(VisionDomainRequest request)
+        public Task<VisionDomainLandmarkModel> AnalyzeLandmarkAsync(VisionDomainRequest request)
         {
-            var result = await AnalyzeAsync<VisionDomainLandmarkModel>(request);
-
-            return result;
+            return this.AnalyzeAsync<VisionDomainLandmarkModel>(request);
         }
 
         private async Task<T> AnalyzeAsync<T>(VisionDomainRequest request)
         {
-            Stopwatch imageResizeSW = null;
+            Stopwatch imageResizeSw = null;
 
-            var visionOperation = await MergeProperties(request, this._config, this._attr);
+            var visionOperation = await this.MergePropertiesAsync(request, this.visionBinding, this.visionDomainAttribute);
 
-            if (request.IsUrlImageSource == false)
+            if (!request.IsUrlImageSource)
             {
-
                 if (visionOperation.ImageBytes == null || visionOperation.ImageBytes.Length == 0)
                 {
-                    _log.LogWarning(VisionExceptionMessages.FileMissing);
+                    this.logger.LogWarning(VisionExceptionMessages.FileMissing);
                     throw new ArgumentException(VisionExceptionMessages.FileMissing);
                 }
 
                 if (ImageResizeService.IsImage(visionOperation.ImageBytes) == false)
                 {
-                    _log.LogWarning(VisionExceptionMessages.InvalidFileType);
+                    this.logger.LogWarning(VisionExceptionMessages.InvalidFileType);
                     throw new ArgumentException(VisionExceptionMessages.InvalidFileType);
                 }
 
-                if (visionOperation.Oversized == true && visionOperation.AutoResize == false)
+                if (visionOperation.Oversized && visionOperation.AutoResize == false)
                 {
-                    var message = string.Format(VisionExceptionMessages.FileTooLarge,
-                                                    VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                    _log.LogWarning(message);
+                    var message = string.Format(VisionExceptionMessages.FileTooLarge, VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
+
+                    this.logger.LogWarning(message);
+
                     throw new ArgumentException(message);
                 }
-                else if (visionOperation.Oversized == true && visionOperation.AutoResize == true)
+
+                if (visionOperation.Oversized && visionOperation.AutoResize)
                 {
-                    _log.LogTrace("Resizing Image");
+                    this.logger.LogTrace("Resizing Image");
 
-                    imageResizeSW = new Stopwatch();
-
-                    imageResizeSW.Start();
+                    imageResizeSw = new Stopwatch();
+                    imageResizeSw.Start();
 
                     visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                    imageResizeSW.Stop();
+                    imageResizeSw.Stop();
 
-                    _log.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSW.ElapsedMilliseconds);
+                    this.logger.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSw.ElapsedMilliseconds);
 
                     if (visionOperation.Oversized)
                     {
-                        var message = string.Format(VisionExceptionMessages.FileTooLargeAfterResize,
-                                                        VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                        _log.LogWarning(message);
+                        var message = string.Format(VisionExceptionMessages.FileTooLargeAfterResize, VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
+
+                        this.logger.LogWarning(message);
+
                         throw new ArgumentException(message);
                     }
-
                 }
             }
 
-            var result = await SubmitRequest<T>(visionOperation);
-
-            return result;
-        }
-
-        private async Task<T> SubmitRequest<T>(VisionDomainRequest request)
-        {
-            Stopwatch sw = new Stopwatch();
-
-            string requestParameters = GetVisionOperationParameters(request);
-
-            string uri = $"{request.Url}/{requestParameters}";
-
-            ServiceResultModel requestResult = null;
-
-            if (request.IsUrlImageSource)
-            {
-                _log.LogTrace($"Submitting Vision Domain Request");
-
-                var urlRequest = new VisionUrlRequest { Url = request.ImageUrl };
-                var requestContent = JsonConvert.SerializeObject(urlRequest);
-
-                var content = new StringContent(requestContent);
-
-                sw.Start();
-
-                requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.String);
-
-                sw.Stop();
-
-                _log.LogMetric("VisionDomainRequestDurationMillisecond", sw.ElapsedMilliseconds);
-
-            }
-            else
-            {
-                using (ByteArrayContent content = new ByteArrayContent(request.ImageBytes))
-                {
-                    requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.String);
-                }
-            }
-
-            if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.OK)
-            {
-                _log.LogTrace($"Analysis Request Results: {requestResult.Contents}");
-
-                var result = JsonConvert.DeserializeObject<T>(requestResult.Contents);
-
-                return result;
-            }
-            else if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
-            {
-
-                VisionErrorModel error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
-                var message = string.Format(VisionExceptionMessages.CognitiveServicesException, error.Code, error.Message);
-
-                _log.LogWarning(message);
-
-                throw new Exception(message);
-            }
-            else
-            {
-                var message = string.Format(VisionExceptionMessages.CognitiveServicesException, requestResult.HttpStatusCode, requestResult.Contents);
-
-                _log.LogError(message);
-
-                throw new Exception(message);
-            }
+            return await this.SubmitRequestAsync<T>(visionOperation);
         }
 
         private string GetVisionOperationParameters(VisionDomainRequest request)
         {
-            string optionsParam = string.Empty;
+            var optionsParam = string.Empty;
 
             switch (request.Domain)
             {
@@ -177,31 +108,31 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
             return optionsParam;
         }
 
-        private async Task<VisionDomainRequest> MergeProperties(VisionDomainRequest operation, IVisionBinding config, VisionDomainAttribute attr)
+        private async Task<VisionDomainRequest> MergePropertiesAsync(VisionDomainRequest operation, IVisionBinding config, VisionDomainAttribute attr)
         {
             //Attributes do not allow for enum types so we have to validate
             //the string passed into the attribute to ensure it matches
             //a valid VisionDomainOption. 
-            VisionDomainOptions attrDomain = VisionDomainOptions.None;
+            var attrDomain = VisionDomainOptions.None;
 
             if (!string.IsNullOrEmpty(attr.Domain))
             {
-                var valid = Enum.TryParse<VisionDomainOptions>(attr.Domain, out attrDomain);
+                var valid = Enum.TryParse(attr.Domain, out attrDomain);
 
                 if (!valid)
                 {
                     var message = string.Format(VisionExceptionMessages.InvalidDomainName, attr.Domain);
-                    _log.LogWarning(message);
+                    this.logger.LogWarning(message);
 
                     throw new ArgumentException(message);
                 }
             }
             else
             {
-                if(operation.Domain == VisionDomainOptions.None)
+                if (operation.Domain == VisionDomainOptions.None)
                 {
                     var message = string.Format(VisionExceptionMessages.InvalidDomainName, "None");
-                    _log.LogWarning(message);
+                    this.logger.LogWarning(message);
 
                     throw new ArgumentException(message);
                 }
@@ -215,23 +146,83 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Domain
                 AutoResize = attr.AutoResize,
                 Domain = attrDomain == VisionDomainOptions.None ? operation.Domain : attrDomain,
                 ImageUrl = string.IsNullOrEmpty(operation.ImageUrl) ? attr.ImageUrl : operation.ImageUrl,
-                ImageBytes = operation.ImageBytes,
+                ImageBytes = operation.ImageBytes
             };
 
             if (string.IsNullOrEmpty(visionOperation.Key) && string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                _log.LogWarning(VisionExceptionMessages.KeyMissing);
+                this.logger.LogWarning(VisionExceptionMessages.KeyMissing);
                 throw new ArgumentException(VisionExceptionMessages.KeyMissing);
             }
 
             if (!string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                HttpClient httpClient = this._config.Client.GetHttpClientInstance();
+                var httpClient = this.visionBinding.Client.GetHttpClientInstance();
 
                 visionOperation.Key = await KeyVaultServices.GetValue(visionOperation.SecureKey, httpClient);
             }
 
             return visionOperation;
+        }
+
+        private async Task<T> SubmitRequestAsync<T>(VisionDomainRequest request)
+        {
+            var sw = new Stopwatch();
+
+            var requestParameters = this.GetVisionOperationParameters(request);
+
+            var uri = $"{request.Url}/{requestParameters}";
+
+            ServiceResultModel requestResult = null;
+
+            if (request.IsUrlImageSource)
+            {
+                this.logger.LogTrace("Submitting Vision Domain Request");
+
+                var urlRequest = new VisionUrlRequest {Url = request.ImageUrl};
+                var requestContent = JsonConvert.SerializeObject(urlRequest);
+                var content = new StringContent(requestContent);
+
+                sw.Start();
+
+                requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.String);
+
+                sw.Stop();
+
+                this.logger.LogMetric("VisionDomainRequestDurationMillisecond", sw.ElapsedMilliseconds);
+            }
+            else
+            {
+                using (var content = new ByteArrayContent(request.ImageBytes))
+                {
+                    requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.String);
+                }
+            }
+
+            if (requestResult.HttpStatusCode == (int) HttpStatusCode.OK)
+            {
+                this.logger.LogTrace($"Analysis Request Results: {requestResult.Contents}");
+
+                return JsonConvert.DeserializeObject<T>(requestResult.Contents);
+            }
+
+            if (requestResult.HttpStatusCode == (int) HttpStatusCode.BadRequest)
+            {
+                var error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
+                var message = string.Format(VisionExceptionMessages.CognitiveServicesException, error.Code, error.Message);
+
+                this.logger.LogWarning(message);
+
+                throw new Exception(message);
+            }
+            else
+            {
+                var message = string.Format(VisionExceptionMessages.CognitiveServicesException, requestResult.HttpStatusCode, requestResult.Contents);
+
+                this.logger.LogError(message);
+
+                throw new Exception(message);
+            }
         }
     }
 }

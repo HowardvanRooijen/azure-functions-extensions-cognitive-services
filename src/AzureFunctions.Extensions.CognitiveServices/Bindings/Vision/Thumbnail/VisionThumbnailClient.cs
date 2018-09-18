@@ -12,75 +12,72 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 {
     public class VisionThumbnailClient
     {
-        IVisionBinding _config;
-        VisionThumbnailAttribute _attr;
-        ILogger _log;
+        private readonly IVisionBinding visionBinding;
+        private VisionThumbnailAttribute visionThumbnailAttribute;
+        private ILogger logger;
 
-        public VisionThumbnailClient(IVisionBinding config, VisionThumbnailAttribute attr, ILoggerFactory loggerFactory)
+        public VisionThumbnailClient(IVisionBinding visionBinding, VisionThumbnailAttribute visionThumbnailAttribute, ILoggerFactory loggerFactory)
         {
-            this._config = config;
-            this._attr = attr;
-            this._log = loggerFactory?.CreateLogger("Host.Bindings.VisionThumbnail");
+            this.visionBinding = visionBinding;
+            this.visionThumbnailAttribute = visionThumbnailAttribute;
+            this.logger = loggerFactory?.CreateLogger("Host.Bindings.VisionThumbnail");
         }
 
-        public async Task<Byte[]> ThumbnailAsync(VisionThumbnailRequest request)
+        public async Task<byte[]> ThumbnailAsync(VisionThumbnailRequest request)
         {
-            Stopwatch imageResizeSw = null;
+            Stopwatch stopwatch = null;
 
-            var visionOperation = await MergeProperties(request, this._config, this._attr);
+            var visionOperation = await this.MergePropertiesAsync(request, this.visionBinding, this.visionThumbnailAttribute);
 
-            if (request.IsUrlImageSource == false)
+            if (!request.IsUrlImageSource)
             {
 
                 if (visionOperation.ImageBytes == null || visionOperation.ImageBytes.Length == 0)
                 {
-                    _log.LogWarning(VisionExceptionMessages.FileMissing);
+                    this.logger.LogWarning(VisionExceptionMessages.FileMissing);
                     throw new ArgumentException(VisionExceptionMessages.FileMissing);
                 }
 
-                if (ImageResizeService.IsImage(visionOperation.ImageBytes) == false)
+                if (!ImageResizeService.IsImage(visionOperation.ImageBytes))
                 {
-                    _log.LogWarning(VisionExceptionMessages.InvalidFileType);
+                    this.logger.LogWarning(VisionExceptionMessages.InvalidFileType);
                     throw new ArgumentException(VisionExceptionMessages.InvalidFileType);
                 }
 
-                if (visionOperation.Oversized == true && visionOperation.AutoResize == false)
+                if (visionOperation.Oversized && !visionOperation.AutoResize)
                 {
                     var message = string.Format(VisionExceptionMessages.FileTooLarge,
                                                     VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                    _log.LogWarning(message);
+                    this.logger.LogWarning(message);
                     throw new ArgumentException(message);
                 }
-                else if (visionOperation.Oversized == true && visionOperation.AutoResize == true)
+                else if (visionOperation.Oversized && visionOperation.AutoResize)
                 {
-                    _log.LogTrace("Resizing Image");
+                    this.logger.LogTrace("Resizing Image");
 
-                    imageResizeSw = new Stopwatch();
+                    stopwatch = new Stopwatch();
 
-                    imageResizeSw.Start();
+                    stopwatch.Start();
 
                     visionOperation.ImageBytes = ImageResizeService.ResizeImage(visionOperation.ImageBytes);
 
-                    imageResizeSw.Stop();
+                    stopwatch.Stop();
 
-                    _log.LogMetric("VisionAnalysisImageResizeDurationMillisecond", imageResizeSw.ElapsedMilliseconds);
+                    this.logger.LogMetric("VisionAnalysisImageResizeDurationMillisecond", stopwatch.ElapsedMilliseconds);
 
                     if (visionOperation.Oversized)
                     {
-                        var message = string.Format(VisionExceptionMessages.FileTooLargeAfterResize,
-                                                        VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
-                        _log.LogWarning(message);
+                        var message = string.Format(VisionExceptionMessages.FileTooLargeAfterResize, VisionConfiguration.MaximumFileSize, visionOperation.ImageBytes.Length);
+                        this.logger.LogWarning(message);
                         throw new ArgumentException(message);
                     }
                 }
             }
 
-            var result = await SubmitRequest(visionOperation);
-
-            return result;
+            return await this.SubmitRequestAsync(visionOperation);
         }
 
-        private async Task<Byte[]> SubmitRequest(VisionThumbnailRequest request)
+        private async Task<byte[]> SubmitRequestAsync(VisionThumbnailRequest request)
         {
             Stopwatch sw = new Stopwatch();
 
@@ -90,7 +87,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 
             if (request.IsUrlImageSource)
             {
-                _log.LogTrace($"Submitting Vision Thumbnail Request");
+                this.logger.LogTrace($"Submitting Vision Thumbnail Request");
 
                 var urlRequest = new VisionUrlRequest { Url = request.ImageUrl };
                 var requestContent = JsonConvert.SerializeObject(urlRequest);
@@ -99,35 +96,33 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 
                 sw.Start();
 
-                requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.Binary);
+                requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.Binary);
 
                 sw.Stop();
 
-                _log.LogMetric("VisionRequestDurationMillisecond", sw.ElapsedMilliseconds);
+                this.logger.LogMetric("VisionRequestDurationMillisecond", sw.ElapsedMilliseconds);
             }
             else
             {
                 using (ByteArrayContent content = new ByteArrayContent(request.ImageBytes))
                 {
-                    requestResult = await this._config.Client.PostAsync(uri, request.Key, content, ReturnType.Binary);
+                    requestResult = await this.visionBinding.Client.PostAsync(uri, request.Key, content, ReturnType.Binary);
                 }
             }
 
             if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.OK)
             {
-                _log.LogTrace($"Thumbnail Request Results");
+                this.logger.LogTrace($"Thumbnail Request Results");
 
-                byte[] fileResult = requestResult.Binary;
-
-                return fileResult;
+                return requestResult.Binary;
             }
-            else if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
-            {
 
-                VisionErrorModel error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
+            VisionErrorModel error = JsonConvert.DeserializeObject<VisionErrorModel>(requestResult.Contents);
+            if (requestResult.HttpStatusCode == (int)System.Net.HttpStatusCode.BadRequest)
+            {
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, error.Code, error.Message);
 
-                _log.LogWarning(message);
+                this.logger.LogWarning(message);
 
                 throw new Exception(message);
             }
@@ -135,13 +130,13 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
             {
                 var message = string.Format(VisionExceptionMessages.CognitiveServicesException, requestResult.HttpStatusCode, requestResult.Contents);
 
-                _log.LogError(message);
+                this.logger.LogError(message);
 
                 throw new Exception(message);
             }
         }
 
-        private async Task<VisionThumbnailRequest> MergeProperties(VisionThumbnailRequest operation, IVisionBinding config, VisionThumbnailAttribute attr)
+        private async Task<VisionThumbnailRequest> MergePropertiesAsync(VisionThumbnailRequest operation, IVisionBinding config, VisionThumbnailAttribute attr)
         {
             var visionOperation = new VisionThumbnailRequest
             {
@@ -158,13 +153,13 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
 
             if (string.IsNullOrEmpty(visionOperation.Key) && string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                _log.LogWarning(VisionExceptionMessages.KeyMissing);
+                this.logger.LogWarning(VisionExceptionMessages.KeyMissing);
                 throw new ArgumentException(VisionExceptionMessages.KeyMissing);
             }
 
             if (!string.IsNullOrEmpty(visionOperation.SecureKey))
             {
-                HttpClient httpClient = this._config.Client.GetHttpClientInstance();
+                HttpClient httpClient = this.visionBinding.Client.GetHttpClientInstance();
 
                 visionOperation.Key = await KeyVaultServices.GetValue(visionOperation.SecureKey, httpClient);
             }

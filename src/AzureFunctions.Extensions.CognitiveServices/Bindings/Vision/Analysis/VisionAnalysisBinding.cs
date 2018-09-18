@@ -65,9 +65,9 @@
             }
 
             var task = client.AnalyzeAsync(request);
-            task.Wait();
+            result.Wait();
 
-            return task.Result;
+            return result.Result;
         }
     }
 }

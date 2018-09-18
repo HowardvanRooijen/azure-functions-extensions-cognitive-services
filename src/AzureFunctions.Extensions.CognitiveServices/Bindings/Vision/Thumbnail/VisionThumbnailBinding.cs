@@ -47,6 +47,7 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
             attribute.Validate();
 
             var client = new VisionThumbnailClient(this, attribute, this.loggerFactory);
+
             var request = new VisionThumbnailRequest();
 
             if (attribute.ImageSource == ImageSource.BlobStorage)
@@ -61,10 +62,10 @@ namespace AzureFunctions.Extensions.CognitiveServices.Bindings.Vision.Thumbnail
                 request.ImageUrl = attribute.ImageUrl;
             }
 
-            var task = client.ThumbnailAsync(request);
-            task.Wait();
+            var result = client.ThumbnailAsync(request);
+            result.Wait();
 
-            return task.Result;
+            return result.Result;
         }
     }
 }
