@@ -5,15 +5,15 @@
 
     public class NameResolver : INameResolver
     {
-        IConfigurationRoot config;
+        private readonly IConfigurationRoot config;
 
         public NameResolver()
         {
             this.config = new ConfigurationBuilder()
                 .AddJsonFile("local.settings.json")
                 .Build();
-
         }
+
         public string Resolve(string name)
         {
             name = $"Values:{name}";

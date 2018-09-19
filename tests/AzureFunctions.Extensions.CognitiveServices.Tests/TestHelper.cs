@@ -17,12 +17,13 @@
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
+    using Xunit.Abstractions;
 
     #endregion 
 
     public class TestHelper
     {
-        public static async Task ExecuteFunction<FunctionType, BindingType>(ICognitiveServicesClient client, string functionReference)
+        public static async Task ExecuteFunction<FunctionType, BindingType>(ICognitiveServicesClient client, string functionReference, ITestOutputHelper testOutputHelper)
         {
             IExtensionConfigProvider binding = null;
 
@@ -53,19 +54,19 @@
 
             (binding as IVisionBinding).Client = client;
 
-            var jobHost = NewHost<FunctionType>(binding);
+            var jobHost = NewHost<FunctionType>(testOutputHelper);
             
             var args = new Dictionary<string, object>();
             await jobHost.CallAsync(functionReference, args);
         }
 
-        public static JobHost NewHost<T>(IExtensionConfigProvider ext)
+        public static JobHost NewHost<T>(ITestOutputHelper testOutputHelper)
         {
             IHost host = new HostBuilder()
                 .ConfigureLogging(
                     loggingBuilder =>
                     {
-                        //loggingBuilder.AddProvider(loggerProvider);
+                        loggingBuilder.AddProvider(new TestLoggerProvider(testOutputHelper));
                     })
                 .ConfigureWebJobs(
                     webJobsBuilder =>

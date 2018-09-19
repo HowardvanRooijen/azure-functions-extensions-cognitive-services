@@ -12,6 +12,7 @@
     using FluentAssertions;
     using Newtonsoft.Json;
     using Xunit;
+    using Xunit.Abstractions;
 
     #endregion
 
@@ -21,13 +22,20 @@
         private static VisionDescribeModel visionDescribeImageBytesResult;
         private static VisionDescribeModel visionDescribeUrlResult;
 
+        private readonly ITestOutputHelper testOutputHelper;
+
+        public VisionDescribeTests(ITestOutputHelper testOutputHelper)
+        {
+            this.testOutputHelper = testOutputHelper;
+        }
+
         [Fact]
-        public static async Task TestVisionAnalysisWithUrl()
+        public async Task TestVisionAnalysisWithUrl()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
             var mockResult = JsonConvert.DeserializeObject<VisionDescribeModel>(MockResults.VisionDescribeResults);
 
-            await TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeWithUrl");
+            await TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeWithUrl", this.testOutputHelper);
 
             var expectedResult = JsonConvert.SerializeObject(mockResult);
             var actualResult = JsonConvert.SerializeObject(visionDescribeUrlResult);
@@ -36,14 +44,14 @@
         }
 
         [Fact]
-        public static async Task TestVisionDescribeImageBytesTooLarge()
+        public async Task TestVisionDescribeImageBytesTooLarge()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
 
             var exceptionMessage = "or smaller for the cognitive service vision API";
 
             var exception = await Record.ExceptionAsync(() =>
-                TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeWithTooBigImageBytes"));
+                TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeWithTooBigImageBytes", this.testOutputHelper));
 
             exception.Should().NotBeNull();
             exception.InnerException.Should().NotBeNull();
@@ -52,12 +60,12 @@
         }
 
         [Fact]
-        public static async Task TestVisionDescribeMissingFile()
+        public async Task TestVisionDescribeMissingFile()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
 
             var exception = await Record.ExceptionAsync(() =>
-                TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeMissingFile"));
+                TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeMissingFile", this.testOutputHelper));
 
             exception.Should().NotBeNull();
             exception.InnerException.Should().NotBeNull();
@@ -66,12 +74,12 @@
         }
 
         [Fact]
-        public static async Task TestVisionDescribeWithImageBytes()
+        public async Task TestVisionDescribeWithImageBytes()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
             var mockResult = JsonConvert.DeserializeObject<VisionDescribeModel>(MockResults.VisionDescribeResults);
 
-            await TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeWithImageBytes");
+            await TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeWithImageBytes", this.testOutputHelper);
 
             var expectedResult = JsonConvert.SerializeObject(mockResult);
             var actualResult = JsonConvert.SerializeObject(visionDescribeImageBytesResult);
@@ -80,12 +88,12 @@
         }
 
         [Fact]
-        public static async Task TestVisionDescribeWithImageWithResize()
+        public async Task TestVisionDescribeWithImageWithResize()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
             var mockResult = JsonConvert.DeserializeObject<VisionDescribeModel>(MockResults.VisionDescribeResults);
 
-            await TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeWithTooBigImageBytesWithResize");
+            await TestHelper.ExecuteFunction<VisionFunctions, VisionDescribeBinding>(client, "VisionFunctions.VisionDescribeWithTooBigImageBytesWithResize", this.testOutputHelper);
 
             var expectedResult = JsonConvert.SerializeObject(mockResult);
             var actualResult = JsonConvert.SerializeObject(visionDescribeImageBytesResizeResult);

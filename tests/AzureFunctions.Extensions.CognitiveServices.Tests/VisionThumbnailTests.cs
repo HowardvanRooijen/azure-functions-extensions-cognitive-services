@@ -10,6 +10,7 @@
     using AzureFunctions.Extensions.CognitiveServices.Tests.Resources;
     using FluentAssertions;
     using Xunit;
+    using Xunit.Abstractions;
 
     #endregion 
 
@@ -17,15 +18,22 @@
     {
         private static byte[] visionThumbnailResult;
 
+        private readonly ITestOutputHelper testOutputHelper;
+
+        public VisionThumbnailTests(ITestOutputHelper testOutputHelper)
+        {
+            this.testOutputHelper = testOutputHelper;
+        }
+
         [Fact]
-        public static async Task TestVisionThumbnailImageBytesTooLarge()
+        public async Task TestVisionThumbnailImageBytesTooLarge()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
 
             var exceptionMessage = "or smaller for the cognitive service vision API";
 
             var exception = await Record.ExceptionAsync(() => 
-                TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailWithTooBigImageBytes"));
+                TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailWithTooBigImageBytes", this.testOutputHelper));
 
             exception.Should().NotBeNull();
             exception.InnerException.Should().NotBeNull();
@@ -34,12 +42,12 @@
         }
 
         [Fact]
-        public static async Task TestVisionThumbnailMissingFile()
+        public async Task TestVisionThumbnailMissingFile()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
 
             var exception = await Record.ExceptionAsync(() => 
-                TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailMissingFile"));
+                TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailMissingFile", this.testOutputHelper));
 
             exception.Should().NotBeNull();
             exception.InnerException.Should().NotBeNull();
@@ -48,31 +56,31 @@
         }
 
         [Fact]
-        public static async Task TestVisionThumbnailWithImageBytes()
+        public async Task TestVisionThumbnailWithImageBytes()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
 
-            await TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailWithImageBytes");
+            await TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailWithImageBytes", this.testOutputHelper);
 
             Assert.Equal(MockResults.SamplePhoto.Length, visionThumbnailResult.Length);
         }
 
         [Fact]
-        public static async Task TestVisionThumbnailWithImageWithResize()
+        public async Task TestVisionThumbnailWithImageWithResize()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
 
-            await TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailWithTooBigImageBytesWithResize");
+            await TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailWithTooBigImageBytesWithResize", this.testOutputHelper);
 
             Assert.Equal(MockResults.SamplePhoto.Length, visionThumbnailResult.Length);
         }
 
         [Fact]
-        public static async Task TestVisionThumbnailWithUrl()
+        public async Task TestVisionThumbnailWithUrl()
         {
             ICognitiveServicesClient client = new TestCognitiveServicesClient();
 
-            await TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailWithUrl");
+            await TestHelper.ExecuteFunction<VisionFunctions, VisionThumbnailBinding>(client, "VisionFunctions.VisionThumbnailWithUrl", this.testOutputHelper);
 
             Assert.Equal(MockResults.SamplePhoto.Length, visionThumbnailResult.Length);
         }
